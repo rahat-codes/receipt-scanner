@@ -1,0 +1,43 @@
+name: receiptscanner
+description: "Offline-first receipt scanner Flutter app"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.6.1
+  drift: ^2.22.0
+  drift_flutter: ^0.2.2
+  sqlite3_flutter_libs: ^0.5.26
+  google_mlkit_text_recognition: ^0.13.1
+  image_picker: ^1.1.2
+  fl_chart: ^0.70.0
+  intl: ^0.20.3
+  shared_preferences: ^2.3.4
+  flutter_dotenv: ^5.2.1
+  http: ^1.2.2
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  meta: ^1.16.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.22.0
+  build_runner: ^2.4.13
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - .env
+    - .env.example
