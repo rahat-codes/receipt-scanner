@@ -1,0 +1,74 @@
+{
+  "@@locale": "ko",
+  "appTitle": "영수증 스캐너",
+  "scanReceipt": "영수증 스캔",
+  "takePhoto": "사진 촬영",
+  "chooseFromGallery": "갤러리에서 선택",
+  "receiptsTitle": "영수증",
+  "statsTitle": "통계",
+  "settingsTitle": "설정",
+  "receiptCount": "영수증 {count}건",
+  "@receiptCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "emptyTitle": "아직 영수증이 없어요",
+  "emptyBody": "첫 영수증을 스캔해서 지출을 기록해 보세요.",
+  "reading": "글자를 읽는 중...",
+  "findingTotal": "합계를 찾는 중...",
+  "askingAi": "AI가 다시 확인하는 중...",
+  "merchant": "상호",
+  "date": "날짜",
+  "total": "합계",
+  "currency": "통화",
+  "category": "카테고리",
+  "saveReceipt": "영수증 저장",
+  "discard": "취소",
+  "keepEditing": "계속 수정",
+  "deleteReceipt": "영수증 삭제",
+  "deleteConfirm": "이 영수증을 삭제할까요? 되돌릴 수 없어요.",
+  "checkThis": "확인해 주세요. 틀릴 수 있어요.",
+  "unreadable": "영수증을 읽지 못했어요. 아래에 직접 입력해 주세요.",
+  "unknownMerchant": "알 수 없는 상호",
+  "badgeAuto": "자동",
+  "badgeAi": "AI 보조",
+  "badgeEdited": "수정됨",
+  "aiUnavailable": "AI 확인을 사용할 수 없어요. 항목을 확인해 주세요.",
+  "permissionCamera": "영수증을 스캔하려면 카메라 접근을 허용해 주세요.",
+  "openSettings": "설정 열기",
+  "noReceiptsMonth": "이달에는 영수증이 없어요.",
+  "language": "언어",
+  "appearance": "화면 모드",
+  "aiDoubleCheck": "AI 재확인",
+  "aiDoubleCheckHelp": "확인이 어려운 영수증의 텍스트만 Google Gemini API로 전송해요. 사진은 전송하지 않으며, 카드·전화번호는 먼저 가려요.",
+  "totalThisMonth": "{month} 합계",
+  "@totalThisMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "category_food": "식비",
+  "category_groceries": "장보기",
+  "category_transport": "교통",
+  "category_shopping": "쇼핑",
+  "category_health": "건강",
+  "category_entertainment": "여가",
+  "category_utilities": "공과금",
+  "category_other": "기타",
+  "system": "시스템",
+  "english": "English",
+  "korean": "한국어",
+  "light": "라이트",
+  "dark": "다크",
+  "cancel": "취소",
+  "edit": "수정",
+  "undo": "실행 취소",
+  "receiptDeleted": "영수증이 삭제되었습니다",
+  "discardTitle": "이 영수증을 파기할까요?",
+  "notes": "메모"
+}

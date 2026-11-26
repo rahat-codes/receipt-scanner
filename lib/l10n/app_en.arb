@@ -1,0 +1,74 @@
+{
+  "@@locale": "en",
+  "appTitle": "Receipt Scanner",
+  "scanReceipt": "Scan receipt",
+  "takePhoto": "Take photo",
+  "chooseFromGallery": "Choose from gallery",
+  "receiptsTitle": "Receipts",
+  "statsTitle": "Stats",
+  "settingsTitle": "Settings",
+  "receiptCount": "{count, plural, =1{1 receipt} other{{count} receipts}}",
+  "@receiptCount": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "emptyTitle": "No receipts yet",
+  "emptyBody": "Scan your first receipt to start tracking.",
+  "reading": "Reading text...",
+  "findingTotal": "Finding the total...",
+  "askingAi": "Asking AI to double-check...",
+  "merchant": "Merchant",
+  "date": "Date",
+  "total": "Total",
+  "currency": "Currency",
+  "category": "Category",
+  "saveReceipt": "Save receipt",
+  "discard": "Discard",
+  "keepEditing": "Keep editing",
+  "deleteReceipt": "Delete receipt",
+  "deleteConfirm": "Delete this receipt? This can't be undone.",
+  "checkThis": "Check this: it may be wrong.",
+  "unreadable": "We couldn't read this receipt. Enter the details below.",
+  "unknownMerchant": "Unknown merchant",
+  "badgeAuto": "Auto",
+  "badgeAi": "AI-assisted",
+  "badgeEdited": "Edited",
+  "aiUnavailable": "AI check unavailable. Please review the fields.",
+  "permissionCamera": "Allow camera access to scan receipts.",
+  "openSettings": "Open settings",
+  "noReceiptsMonth": "No receipts in this month.",
+  "language": "Language",
+  "appearance": "Appearance",
+  "aiDoubleCheck": "AI double-check",
+  "aiDoubleCheckHelp": "When on, text from receipts the app can't read confidently is sent to Google's Gemini API. Photos are never sent. Card and phone numbers are hidden first.",
+  "totalThisMonth": "{month} total",
+  "@totalThisMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "category_food": "Food and drinks",
+  "category_groceries": "Groceries",
+  "category_transport": "Transport",
+  "category_shopping": "Shopping",
+  "category_health": "Health",
+  "category_entertainment": "Entertainment",
+  "category_utilities": "Bills and utilities",
+  "category_other": "Other",
+  "system": "System",
+  "english": "English",
+  "korean": "한국어",
+  "light": "Light",
+  "dark": "Dark",
+  "cancel": "Cancel",
+  "edit": "Edit",
+  "undo": "Undo",
+  "receiptDeleted": "Receipt deleted",
+  "discardTitle": "Discard this receipt?",
+  "notes": "Notes"
+}
