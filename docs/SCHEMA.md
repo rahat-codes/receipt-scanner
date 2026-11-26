@@ -13,12 +13,15 @@ File: `app.sqlite` in the app's private storage (`drift_flutter` handles the loc
 | `raw_ocr_text` stored | Lets us re-run an improved parser later and debug wrong extractions. |
 | `parser_source` + `confidence` stored | Evaluation and the "AI-assisted" badge. Shows how each record was produced. |
 | Image path stored, image file kept in app storage | Keeps the database small. Delete the file when the row is deleted. |
+| `assistant_tips` stored locally (schema v2) | Remembers scheduled and historical tips; auto-cleans old entries to keep at most 50 rows. |
 | No `users` table | There is no auth. One device, one user. |
 
 ## 2. Entity relationship
 
 ```
 categories 1 ───< receipts
+receipts   1 ───< receipt_items
+assistant_tips
 ```
 
 ## 3. Drift table definitions
@@ -76,18 +79,38 @@ class MerchantRules extends Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-@DriftDatabase(tables: [Categories, Receipts, ReceiptItems, MerchantRules])
+// v3: tip notifications & history (F13)
+class AssistantTips extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get kind => text()();                      // 'rule' | 'ai' | 'evergreen'
+  TextColumn get ruleKey => text().nullable()();        // null for AI tips
+  TextColumn get title => text()();
+  TextColumn get body => text()();
+  DateTimeColumn get scheduledAt => dateTime().nullable()();
+  DateTimeColumn get readAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DriftDatabase(tables: [Categories, Receipts, ReceiptItems, MerchantRules, AssistantTips])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
           await _seedCategories();
+        },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(assistantTips);
+          }
+        },
+        beforeOpen: (details) async {
+          await customStatement('PRAGMA foreign_keys = ON');
         },
       );
 
@@ -112,12 +135,6 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 ```
-
-Notes for Gemini:
-- Run `dart run build_runner build --delete-conflicting-outputs` after any change to this file.
-- Open the database from an **explicit file path** in production (`NativeDatabase.createInBackground(File(p.join((await getApplicationDocumentsDirectory()).path, 'app.sqlite')))`) and `NativeDatabase.memory()` in tests. *Why:* backup and restore (F10) must know exactly which file to snapshot and replace.
-- Validate before insert: `totalMinor > 0`, `merchant` trimmed, `currency` in `{'KRW','USD'}`.
-- If the table or column set changes after Day 3, increment `schemaVersion` and write a migration. Until then, uninstall the app when changing the schema.
 
 ## 4. Categories (labels live in ARB files)
 
@@ -167,14 +184,14 @@ ORDER BY total DESC;
 
 **This month's total:** same as the category query without the join and grouping.
 
-Implement these with `customSelect` and `readsFrom: {receipts, categories}` so they work with streams, then map rows into small result classes in `domain/`.
-
 ## 6. Domain entity mapping
 
 `Receipt` (domain) mirrors the table minus Drift types: `id`, `merchant`, `purchasedAt`, `totalMinor`, `currency`, `categoryId`, `imagePath`, `rawOcrText`, `parserSource`, `confidence`.
+`AssistantTip` (domain) mirrors the table: `id`, `kind`, `ruleKey`, `title`, `body`, `scheduledAt`, `readAt`, `createdAt`.
+
 The repository converts between Drift rows and domain entities so that the rest of the app never imports Drift.
 
-## 7. Repository contract
+## 7. Repository contracts
 
 ```dart
 abstract class ReceiptRepository {
@@ -189,10 +206,10 @@ abstract class ReceiptRepository {
 
   // v2
   Stream<List<Receipt>> watchFiltered(ReceiptFilter filter);              // F2
-  Future<List<Receipt>> getMonthReceipts(DateTime month, String currency); // F3, F6, F7 (merchant grouping is done in Dart)
+  Future<List<Receipt>> getMonthReceipts(DateTime month, String currency); // F3, F6, F7
   Future<List<Receipt>> findPossibleDuplicates(Receipt candidate, {int? excludeId}); // F4
   Future<List<ReceiptItem>> getItems(int receiptId);                      // F9
-  Future<void> replaceItems(int receiptId, List<ReceiptItem> items);      // F9, run inside a transaction
+  Future<void> replaceItems(int receiptId, List<ReceiptItem> items);      // F9
 }
 
 class ReceiptFilter {
@@ -206,63 +223,28 @@ class ReceiptFilter {
 
 abstract class MerchantRuleRepository {                                   // F5
   Future<int?> categoryFor(String merchantKey);
-  Future<void> upsert(String merchantKey, int categoryId);               // same category: hitCount + 1; different: replace, hitCount = 1
+  Future<void> upsert(String merchantKey, int categoryId);
+}
+
+abstract class TipRepository {                                            // F13
+  Future<List<AssistantTip>> getTips({int limit = 50});
+  Future<void> insertTip(AssistantTip tip);
+  Future<void> markAsRead(int tipId);
+  Future<List<String>> getRecentTipKeys({int count = 20});
 }
 ```
 
-## 8. Extended tables and queries (v2)
+## 8. Extended tables and queries (v2 & v3)
 
-All four tables are created at **schema version 1**, because the full scope is decided on Day 1. Changing tables later costs a migration, so decide now.
+### 8.1 Foreign keys & Migration
+- Schema v1 to v2 migration adds `assistant_tips` table via `onUpgrade`.
+- Backup service validates manifest `schemaVersion` (supports version 1 and 2). Importing a v1 backup into v2 triggers Drift's migration automatically.
 
-### 8.1 Foreign keys must be switched on
-
-SQLite ignores foreign keys unless asked. Add to the `MigrationStrategy`:
-```dart
-beforeOpen: (details) async {
-  await customStatement('PRAGMA foreign_keys = ON');   // needed for ON DELETE CASCADE on receipt_items
-},
-```
-
-### 8.2 Design decisions
-
-| Decision | Why |
-|---|---|
-| `receipt_items.line_total_minor` is required, `unit_price_minor` and `quantity` are optional | Many receipts show only a line amount. Line total is the value we can always verify against the receipt total. |
-| `ON DELETE CASCADE` on `receipt_items` | Deleting a receipt must never leave orphan items. |
-| `merchant_rules` is keyed by a **normalized** merchant key, not the raw name | "GS25 대연점" and "GS25 광안점" should share one learned category. |
-| One rule per merchant key (latest choice wins) | Simple and explainable. Majority voting is possible later. |
-| Top merchants are grouped **in Dart**, not in SQL | Normalization (removing branch suffixes) is Dart logic and is unit-tested there. A month has few rows, so fetching them is cheap. |
-| Index on `(purchased_at, total_minor)` | Makes the duplicate lookup fast. |
-
-### 8.3 Queries
-
-**Search and filter** (F2). Escape `%` and `_` in the user's text before binding it to the `LIKE`:
+### 8.2 Tip Retention Query
+When inserting new tips, keep at most the 50 most recent entries:
 ```sql
-SELECT r.*
-FROM receipts r
-WHERE (?1 IS NULL OR r.merchant LIKE '%' || ?1 || '%' ESCAPE '\'
-       OR EXISTS (SELECT 1 FROM receipt_items i
-                  WHERE i.receipt_id = r.id AND i.name LIKE '%' || ?1 || '%' ESCAPE '\'))
-  AND (?2 IS NULL OR r.category_id = ?2)
-  AND (?3 IS NULL OR r.purchased_at >= ?3)
-  AND (?4 IS NULL OR r.purchased_at <  ?4)
-ORDER BY r.purchased_at DESC, r.id DESC;
+DELETE FROM assistant_tips
+WHERE id NOT IN (
+  SELECT id FROM assistant_tips ORDER BY created_at DESC LIMIT 50
+);
 ```
-
-**Possible duplicates** (F4): fetch rows with the same currency and total on the same calendar day, then compare normalized merchant keys in Dart.
-```sql
-SELECT * FROM receipts
-WHERE currency = ?1
-  AND total_minor = ?2
-  AND purchased_at >= ?3          -- start of that day
-  AND purchased_at <  ?4          -- start of next day
-  AND (?5 IS NULL OR id != ?5);   -- exclude the receipt being edited
-```
-
-**Month receipts** (F3, F6, F7): `SELECT * FROM receipts WHERE currency = ?1 AND purchased_at >= ?2 AND purchased_at < ?3` then group in Dart.
-
-**Items of a receipt** (F9): `SELECT * FROM receipt_items WHERE receipt_id = ?1 ORDER BY position`.
-
-### 8.4 Backup relevance
-
-The backup (F10) contains: a consistent snapshot of `app.sqlite` made with `VACUUM INTO`, the `receipts/` image folder, and a `manifest.json` with `schemaVersion`. See `docs/ARCHITECTURE.md` section 12.8.

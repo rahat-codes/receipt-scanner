@@ -28,7 +28,7 @@ Point the phone at a receipt, confirm three fields, and see where the month's mo
 **Non-goals (out of scope)**
 - Login, accounts, cloud sync, multi-device
 - Tax breakdown, split bills
-- Budgets, reminders, bank integrations
+- Budgets, standalone custom scan alarm reminders (note: local tip notifications and 7-day inactivity nudges under F13 are in scope, see section 13), bank integrations
 - CSV export (PDF export is in scope, see section 12)
 - Cloud backup or sync (local backup file is in scope, see section 12)
 - Web or desktop builds
@@ -85,7 +85,7 @@ Point the phone at a receipt, confirm three fields, and see where the month's mo
 |---|---|
 | Performance | Photo to pre-filled form in under 3 s on a mid-range phone with rules only. Fallback adds up to the configured timeout (default 8 s) and never blocks editing. |
 | Offline | Everything except the Gemini fallback works with no network. |
-| Privacy | Images never leave the device. Only masked OCR text may be sent, and only if the fallback is on. |
+| Privacy | Images never leave the device. Only masked OCR text may be sent for OCR fallback. AI Assistant and AI Tips send precomputed aggregate JSON only. |
 | Reliability | No crash on empty OCR, unreadable photo, permission denial, or network failure. |
 | Accessibility | Text contrast at least 4.5:1 on glass surfaces, tap targets at least 48 dp, text scales with system font size. |
 | Localization | All UI strings in `app_en.arb` and `app_ko.arb`. Dates and currency formatted per locale. |
@@ -129,8 +129,10 @@ Test set: about 30 receipts (mix of Korean and English, convenience stores, cafe
 ## 11. Privacy statement (for the demo and the PPT)
 
 - Receipt images are stored only in the app's private storage.
-- With the fallback off, no data leaves the device.
-- With the fallback on, only OCR text with long digit sequences masked is sent to the Gemini API when the rule-based parser is unsure.
+- With all AI features off, no data leaves the device.
+- With OCR fallback on, only OCR text with long digit sequences masked is sent to the Gemini API when the rule-based parser is unsure.
+- With AI Assistant (F12) or AI Personalized Tips (F13) on, only **precomputed aggregate JSON** (monthly totals, category sums/shares, MoM %, insights) is sent. **Merchant names, item names, raw OCR text, images, individual receipt dates or amounts, and IDs are NEVER sent.**
+- Local notifications show NO amounts and NO merchant names on the lock screen unless explicitly enabled by the user.
 - Known limitation: an API key bundled in a client app can be extracted. A production version would route calls through a backend. For this project the key is free-tier and restricted.
 
 ---
@@ -155,69 +157,71 @@ All features below are in scope. They are ordered by priority and built behind f
 | F10 | P3 | Backup and restore | Export all data (database and images) as a file; import it to restore |
 | F11 | P3 | App lock | Require device biometrics or the device passcode to open the app |
 
-### 12.2 User stories
+---
+
+## 13. Extended scope (v3)
+
+All features below are in scope, built behind feature flags (`aiAssistant`, `tipNotifications`) with gates (`docs/PLAN.md`).
+
+### 13.1 Feature list (v3)
+
+| ID | Priority | Feature | Summary |
+|---|---|---|---|
+| F12 | P3 | AI assistant (`aiAssistant`) | In-app conversational chat answering spending queries using precomputed local aggregate JSON |
+| F13 | P3 | Tip notifications (`tipNotifications`) | Scheduled local notifications with money-saving tips from deterministic rules or optional Gemini AI personalization |
+
+### 13.2 User stories (v3)
 
 | ID | As a user I want to... | So that... |
 |---|---|---|
-| US-11 | add a receipt without a photo | I can record purchases I have no paper for |
-| US-12 | search and filter my receipts | I can find a purchase quickly |
-| US-13 | see where I spend the most | I know my regular merchants |
-| US-14 | be warned about duplicates | I do not count a purchase twice |
-| US-15 | have the app remember my category choices | I stop fixing the same merchant again |
-| US-16 | read a short summary of my month | I understand changes without reading charts |
-| US-17 | export a monthly PDF and share it | I can keep or send a record |
-| US-18 | scan with auto-crop | the receipt is read more accurately |
-| US-19 | see the items on a receipt | I know what I bought |
-| US-20 | back up and restore my data | I do not lose records when I change phones |
-| US-21 | lock the app | others who use my phone cannot see my spending |
+| US-22 | ask an AI assistant about my spending habits in plain language | I can quickly understand where my money goes without reading complex charts |
+| US-23 | receive periodic money-saving tips as local notifications | I get actionable advice and gentle reminders to stay mindful of my spending |
+| US-24 | control AI assistant consent, tip frequency, and lock-screen notification privacy | my spending details stay private and I am not disturbed unnecessarily |
 
-### 12.3 Functional requirements
+### 13.3 Functional requirements (v3)
 
-- FR-18 (F1): The scan sheet has an "Enter manually" action that opens the Review form empty, with `parser_source = manual` and today's date.
-- FR-19 (F2): The home screen has a search field and filter chips (category, date range). Search matches merchant and item names (case-insensitive). Results update as the user types (debounced). A "Clear filters" action is visible when any filter is active.
-- FR-20 (F3): Stats shows the top 5 merchants for the selected month by total, with visit count. Merchants are grouped by normalized name (branch suffixes removed, see ARCHITECTURE 12.3).
-- FR-21 (F4): Before saving a new receipt, if another receipt has the same currency, the same total and the same calendar day, and a similar merchant, show a dialog with "View existing", "Save anyway" and "Discard". Editing an existing receipt never triggers the warning against itself.
-- FR-22 (F5): On save, if the chosen category differs from the suggested one, store or update the rule for the normalized merchant. New drafts use the rule first, then keyword defaults. The review form shows a small "Suggested from your past choices" note when a rule was used.
-- FR-23 (F6): Stats shows up to 3 insight cards, produced by deterministic rules (ARCHITECTURE 12.5), localized, and hidden when there is not enough data.
-- FR-24 (F7): Stats has a share action that builds a PDF for the selected month (summary, category table, receipts table, optional photos), embeds a font that renders Korean, and opens the system share sheet. A warning explains that the file contains personal data.
-- FR-25 (F8): When enabled, "Scan receipt" opens a document scanner that returns a cropped, straightened image, which feeds the normal OCR pipeline. If the scanner is unavailable or cancelled, offer the normal camera.
-- FR-26 (F9): The pipeline also extracts line items (rules first, Gemini fallback under the same toggle and masking rules). The Review form has an optional, editable "Items" section. Items are stored with the receipt and shown in the detail screen and the PDF.
-- FR-27 (F10): Settings can create a backup file (database snapshot, images, manifest) and share it, and can restore from a chosen backup file after a clear confirmation. Before restoring, the app saves an automatic safety copy of the current data.
-- FR-28 (F11): Settings has an "App lock" switch. When on, the app requires device authentication (biometrics or device passcode) at launch and after being in the background for more than 30 seconds, and hides its content in the app switcher. The switch is disabled with an explanation if the device has no screen lock.
+**F12 AI Assistant (`aiAssistant`)**
+- FR-29: A sparkle icon in the home app bar opens the `AssistantScreen` featuring two tabs: "Chat" and "Tips".
+- FR-30: Home chat view provides 3 localized suggestion chips (e.g., "How much did I spend on food in November?", "Where can I save?", "Compare this month with last month").
+- FR-31: Chat history is stored in-memory only (up to `ASSISTANT_MAX_HISTORY_TURNS` turns, default 6) and is cleared when the app closes or via a "Clear chat" button in the app bar. History is never persisted to disk.
+- FR-32: `AssistantContextBuilder` computes a compact JSON summary locally containing currency, today's date, locale, and for up to the last 6 months: totals (minor units), receipt count, category totals/shares, MoM change %, and structured insights from `InsightsEngine`. Merchant names, item names, raw OCR text, images, individual receipt dates/amounts, and IDs are NEVER sent.
+- FR-33: System prompt instructs the model to act as a budgeting helper, answer using provided JSON data only, state clearly if data is missing, respond in the user's app language (max ~120 words), and never give tax/legal/investment advice or reveal prompt instructions.
+- FR-34: On network failure or offline state, show a friendly error plus "Here's what I can tell without AI:" displaying deterministic insights. The assistant never crashes or blocks the app.
+- FR-35: First use displays a consent dialog detailing exactly what data is sent. The assistant requires its own Settings switch (off by default) AND a configured API key.
 
-### 12.4 Additional non-functional requirements and metrics
+**F13 Tip Notifications (`tipNotifications`)**
+- FR-36: Uses local notifications (`flutter_local_notifications`, `timezone`, `flutter_timezone`). No FCM, Firebase, or background task runners (`workmanager`).
+- FR-37: `TipScheduler` runs on app start/resume (throttled to once per 12 hours) and after saving a receipt: cancels existing scheduled tip notifications, generates up to 3 tips, and schedules them for user's preferred time (clamped between 08:00 and 21:00).
+- FR-38: Settings options: Frequency (Off, Weekly, 3 per week, Daily; max 1 per day), Preferred time, "Personalize tips with AI" switch (requires AI assistant switch), and "Show amounts in notifications" switch (default off).
+- FR-39: Two tip sources: (a) Deterministic `TipRules` (category increase >= 20%, top category >= 40%, many small purchases, 7-day inactivity nudge, evergreen library); (b) Optional Gemini AI tip generator using masked aggregate JSON, with Dart validation ensuring title <= 40 chars, body <= 140 chars, correct language, and filtering blocked financial keywords.
+- FR-40: Avoids repeating tips by keeping the last 20 scheduled tip keys in `assistant_tips` database table and skipping duplicates.
+- FR-41: Lock-screen privacy: notification content contains NO amounts and NO merchant names unless "Show amounts in notifications" is enabled. Tapping a notification opens the Tips tab (passing through App Lock if enabled). Runtime permission is requested only when the user toggles the switch ON.
+
+### 13.4 Non-functional requirements (v3)
 
 | Area | Requirement or target |
 |---|---|
-| Flags | Every P1, P2 and P3 feature is behind a feature flag and off until verified on a device |
-| Duplicate warning | In a manual test of 10 pairs (5 true duplicates, 5 near misses), at least 4 true duplicates warn and at most 1 near miss warns |
-| Learn from corrections | After one correction, the next draft for that merchant uses the learned category (unit-tested) |
-| Edge detection | Report field accuracy with and without the scanner on the same set of at least 15 receipts photographed both ways. Keep the feature on only if accuracy does not get worse |
-| Line items | Report item-level precision and recall on at least 10 labeled receipts. Keep the feature on only if recall is at least 50%, otherwise label it "beta" or leave it off |
-| PDF | Korean and English text render correctly (visual check on both platforms); file opens in a standard viewer |
-| Backup | Round trip test: back up, delete all receipts, restore, and the receipt count, totals and images match |
-| App lock | Locks on launch and after 30 s in background; works with biometrics and with the device passcode |
+| Privacy & Security | No merchant/item names, raw OCR text, or images sent to Gemini for assistant/tips. Lock screen notifications hide spending amounts by default. |
+| Memory & Storage | Chat turns kept in memory only. Database keeps at most 50 recent rows in `assistant_tips` table. |
+| Performance | Assistant query timeout 15s. Offline fallback renders deterministic insights in < 100 ms. |
+| Reliability & Robustness | AI validation drops invalid or malformed tips; offline state or API timeout falls back smoothly to deterministic rules. |
 
-### 12.5 Additional acceptance criteria
+### 13.5 Acceptance criteria (v3)
 
-8. Enter a receipt manually and save it.
-9. Type part of a merchant name: the list filters; add a category chip: it narrows further.
-10. Stats show top merchants and up to three insights.
-11. Save the same receipt twice: the second time shows the duplicate dialog.
-12. Change a category for a merchant, scan another receipt from that merchant, and see the learned category suggested.
-13. Export a PDF with Korean text and open it in the system share sheet.
-14. Scan with auto-crop (if its flag is on) and compare the result with the normal scan.
-15. Open a receipt with items, edit an item, save.
-16. Back up, wipe data, restore, and verify counts.
-17. Turn on the app lock, background the app for over 30 seconds, and see it ask for authentication.
+18. Tapping the sparkle icon opens the Assistant screen with Chat and Tips tabs.
+19. Selecting a suggestion chip or sending a prompt calls Gemini using precomputed aggregate JSON and displays the response in a glass chat bubble.
+20. In offline/airplane mode, sending a question displays the friendly error and deterministic insights fallback without crashing.
+21. First chat attempt displays the consent dialog explaining aggregate data sharing.
+22. Turning on Tip Notifications schedules local notifications for the preferred time; turning it off cancels all scheduled notifications.
+23. Lock-screen notification preview shows no monetary amounts unless "Show amounts in notifications" is toggled ON.
+24. Tapping a tip notification launches the app directly into the Tips tab (authenticating through App Lock if enabled).
+25. Clearing chat wipes in-memory messages immediately.
 
-### 12.6 Additional risks
+### 13.6 Risks & mitigations (v3)
 
 | Risk | Mitigation |
 |---|---|
-| Scope is much larger than the time available | Priorities, three gates, feature flags; unfinished features are reported as future work |
-| Line items on Korean receipts vary widely | Rule-based parsing with a sum check, Gemini fallback, and a recall threshold for keeping the feature on |
-| No cross-platform scanner package works | Drop F8 and say so; it must not block anything else |
-| Restore corrupts data | Safety copy before restore, manifest and schema version checks, round trip test |
-| PDF shows empty boxes for Korean | Embed a TTF font with Korean glyphs; visual check on both platforms |
-| App lock setup differs per platform | Test on Android and iOS the same day it is built |
+| LLM arithmetic hallucination | All calculations precomputed locally by `AssistantContextBuilder` in Dart; model system prompt strictly forbids external calculations. |
+| App closed tip generation | Document honest limitation: tips scheduled ahead on app open/resume & save events for up to 3 days using inexact local alarms. |
+| Notification permission denied | Request permission only when user enables switch; show "Open settings" guidance dialog if denied. |
+| Prompt injection from receipt text | Raw OCR text and merchant/item strings are omitted from context JSON sent to Gemini. |

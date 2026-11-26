@@ -1,7 +1,7 @@
 # DESIGN
 
 Style: **glassmorphism**, light and dark following the system setting, Korean and English UI, Android and iOS.
-Navigation: one receipts list as home, a floating Scan button, stats and settings as secondary screens.
+Navigation: one receipts list as home, a floating Scan button, stats, assistant, and settings as secondary screens.
 
 ## 1. Design plan
 
@@ -69,331 +69,103 @@ Expose tokens through a `ThemeExtension<GlassTheme>` so widgets read `Theme.of(c
 - `PerforatedSlip`: `GlassPanel` clipped by a `CustomClipper<Path>` that draws semicircular notches (radius about 6 px, spacing about 18 px) along the bottom edge.
 - `AmberHint`: amber 1.5 px outline plus a caption below a field.
 
-```dart
-// Pattern for GlassPanel (WHY comments are required in real code)
-class GlassPanel extends StatelessWidget {
-  const GlassPanel({super.key, required this.child, this.radius = 20, this.strong = false});
-  final Widget child; final double radius; final bool strong;
-
-  @override
-  Widget build(BuildContext context) {
-    final g = Theme.of(context).extension<GlassTheme>()!;
-    // WHY: opaque surface when the user asked for high contrast; blur hurts legibility for some users.
-    final opaque = MediaQuery.of(context).highContrast;
-    final fill = opaque ? g.opaqueSurface : (strong ? g.fillStrong : g.fill);
-    final box = DecoratedBox(
-      decoration: BoxDecoration(
-        color: fill,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: g.border),
-        boxShadow: [g.shadow],
-      ),
-      child: child,
-    );
-    return RepaintBoundary(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: opaque
-            ? box
-            : BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: g.blurSigma, sigmaY: g.blurSigma),
-                child: box,
-              ),
-      ),
-    );
-  }
-}
-```
-
-### 2.3 Performance and accessibility rules
-
-- **Never** put `BackdropFilter` on items inside a scrolling list. One blur per screen region at most (slip, plus an open sheet or dialog).
-- Text on glass: Ink on light glass, Fog on dark glass. Verify contrast at least 4.5:1 for body text and 3:1 for large text.
-- Primary buttons: Lagoon fill with **Ink text** (white on Lagoon fails contrast).
-- Tap targets at least 48 x 48 dp. Text must scale up to 200% without clipping (test on a large system font).
-- Respect `MediaQuery.disableAnimations`: skip the count-up and use no transitions.
-- Do not rely on color alone: amber fields also show a text hint and an icon; chart legends show names and values.
+---
 
 ## 3. Screens
 
-Routing: plain `Navigator.push` with `MaterialPageRoute` (five screens do not need a router package).
-
 ### 3.1 Receipts (home)
 
-```
-┌──────────────────────────────┐
-│ Receipts            [chart][⚙]│  app bar (transparent), stats + settings icons
-│                              │
-│ ╔══════════════════════════╗ │
-│ ║ November                 ║ │  PerforatedSlip
-│ ║ ₩ 184,300                ║ │  amountXL, count-up on change
-│ ║ 12 receipts              ║ │
-│ ╚◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡◡╝ │  perforated edge
-│                              │
-│ ┌──────────────────────────┐ │  FrostedTile (no blur)
-│ │ ● GS25 대연점     ₩4,300 │ │  category dot, merchant, amount
-│ │   Nov 18 · Groceries     │ │  caption
-│ └──────────────────────────┘ │
-│ ┌──────────────────────────┐ │
-│ │ ● Café Blue      ₩12,500 │ │
-│ └──────────────────────────┘ │
-│                              │
-│                  [ + Scan ]  │  extended FAB (Lagoon, Ink text)
-└──────────────────────────────┘
-```
-
-- Header shows the current month and its total for the default currency (KRW). Tapping the slip opens Stats.
-- Row: category color dot, merchant (subtitle), caption with date and category name, amount right-aligned. A small "AI-assisted" icon appears if `parser_source == llm`.
-- Swipe left to delete with an undo snackbar. Tap opens the detail screen.
-- Empty state: a simple line illustration of a slip (use `CustomPaint` or an icon), title "No receipts yet", body "Scan your first receipt to start tracking.", button "Scan receipt".
-- **Scan button** opens a glass bottom sheet with the actions listed in section 8.1 (system camera and gallery via `image_picker`, plus manual entry and, when enabled, auto-crop scanning) (system camera and `image_picker`).
-
-### 3.2 Processing (modal state over the scan flow)
-
-A `GlassPanel` dialog with a progress indicator and a status line that changes with the pipeline: "Reading text...", "Finding the total...", and, only if the fallback runs, "Asking AI to double-check...". A "Cancel" text button is always available. No fake delays.
-
-### 3.3 Review (add and edit)
-
-Plain, editable form on a `GlassPanel` (strong fill). Fields, top to bottom:
-
-1. Merchant (text)
-2. Date (tap to open the date picker)
-3. Total (numeric keypad; display grouping for KRW)
-4. Currency (segmented control: KRW, USD)
-5. Category (wrap of selectable chips with the category color dot)
-
-- Fields in `needsReview` get an `AmberHint`: amber outline, a warning icon, and a hint such as "Check this: the total may be wrong".
-- Top-right shows a small badge: "Auto", "AI-assisted" or "Edited" (from `parser_source`; becomes "Edited" once the user changes any field of an auto result, stored as `manual` only when everything was typed by hand).
-- Buttons: **Save receipt** (primary), **Discard** (text button). Discard after edits asks "Discard this receipt?" with "Keep editing" and "Discard".
-- Validation: total must be greater than 0; merchant may be empty (save as "Unknown merchant" localized). Show inline errors under the field, not toasts.
-- If OCR found nothing: open the same form empty, with all fields flagged and the message "We couldn't read this receipt. Enter the details below."
-
-### 3.4 Receipt detail
-
-Receipt photo at the top (rounded, tap to zoom with `InteractiveViewer`), then a `GlassPanel` listing merchant, date, total, category, and a caption line showing how it was filled. Actions: **Edit** (opens Review), **Delete receipt** (destructive, confirmation dialog: "Delete this receipt? This can't be undone.").
-
-### 3.5 Stats
-
-```
-┌──────────────────────────────┐
-│ ‹  Stats                      │
-│    [ ‹  November 2026  › ]    │  month selector
-│  ┌────────────────────────┐  │
-│  │      ◜◝  donut         │  │  GlassPanel (the one blur on this screen)
-│  │     ◟◞  ₩184,300       │  │  total in the center
-│  │ ● Food        ₩72,000 39%│ │  legend: dot, name, amount, share
-│  │ ● Groceries   ₩51,300 28%│ │
-│  └────────────────────────┘  │
-│  ┌────────────────────────┐  │
-│  │ ▂ ▅ ▃ ▇ ▄ ▆            │  │  last 6 months bar chart
-│  │ Jun Jul Aug Sep Oct Nov │  │  current month in Lagoon, others Iris 60%
-│  └────────────────────────┘  │
-└──────────────────────────────┘
-```
-
-- Donut: `fl_chart` `PieChart` with a large center hole and category colors from the database. Tapping a slice highlights its legend row.
-- Bars: `fl_chart` `BarChart`, y-axis hidden, value labels above bars abbreviated per locale (Korean: `18만`, English: `184K`).
-- Empty month: "No receipts in this month." with the charts hidden.
-- Both charts must have text alternatives (`Semantics` label summarizing the numbers).
-
-### 3.6 Settings
-
-Three `FrostedTile` groups:
-- **Language:** System / English / 한국어
-- **Appearance:** System / Light / Dark
-- **AI double-check:** switch, with the helper text "When on, text from receipts the app can't read confidently is sent to Google's Gemini API. Photos are never sent. Card and phone numbers are hidden first."
-
-Changes apply immediately and persist. Theme mode and locale are dynamically bound via Riverpod `settingsControllerProvider` in `MaterialApp` (`main.dart`).
-
-## 4. Copy (English and Korean)
-
-Use these as the first ARB entries. Sentence case, active verbs, same word for the same action everywhere.
-
-| Key | English | 한국어 |
-|---|---|---|
-| appTitle | Receipt Scanner | 영수증 스캐너 |
-| scanReceipt | Scan receipt | 영수증 스캔 |
-| takePhoto | Take photo | 사진 촬영 |
-| chooseFromGallery | Choose from gallery | 갤러리에서 선택 |
-| receiptsTitle | Receipts | 영수증 |
-| statsTitle | Stats | 통계 |
-| settingsTitle | Settings | 설정 |
-| receiptCount | {count, plural, =1{1 receipt} other{{count} receipts}} | 영수증 {count}건 |
-| emptyTitle | No receipts yet | 아직 영수증이 없어요 |
-| emptyBody | Scan your first receipt to start tracking. | 첫 영수증을 스캔해서 지출을 기록해 보세요. |
-| reading | Reading text... | 글자를 읽는 중... |
-| findingTotal | Finding the total... | 합계를 찾는 중... |
-| askingAi | Asking AI to double-check... | AI가 다시 확인하는 중... |
-| merchant | Merchant | 상호 |
-| date | Date | 날짜 |
-| total | Total | 합계 |
-| currency | Currency | 통화 |
-| category | Category | 카테고리 |
-| saveReceipt | Save receipt | 영수증 저장 |
-| discard | Discard | 취소 |
-| keepEditing | Keep editing | 계속 수정 |
-| deleteReceipt | Delete receipt | 영수증 삭제 |
-| deleteConfirm | Delete this receipt? This can't be undone. | 이 영수증을 삭제할까요? 되돌릴 수 없어요. |
-| checkThis | Check this: it may be wrong. | 확인해 주세요. 틀릴 수 있어요. |
-| unreadable | We couldn't read this receipt. Enter the details below. | 영수증을 읽지 못했어요. 아래에 직접 입력해 주세요. |
-| unknownMerchant | Unknown merchant | 알 수 없는 상호 |
-| badgeAuto | Auto | 자동 |
-| badgeAi | AI-assisted | AI 보조 |
-| badgeEdited | Edited | 수정됨 |
-| aiUnavailable | AI check unavailable. Please review the fields. | AI 확인을 사용할 수 없어요. 항목을 확인해 주세요. |
-| permissionCamera | Allow camera access to scan receipts. | 영수증을 스캔하려면 카메라 접근을 허용해 주세요. |
-| openSettings | Open settings | 설정 열기 |
-| noReceiptsMonth | No receipts in this month. | 이달에는 영수증이 없어요. |
-| language | Language | 언어 |
-| appearance | Appearance | 화면 모드 |
-| aiDoubleCheck | AI double-check | AI 재확인 |
-| aiDoubleCheckHelp | (see 3.6) | 확인이 어려운 영수증의 텍스트만 Google Gemini API로 전송해요. 사진은 전송하지 않으며, 카드·전화번호는 먼저 가려요. |
-| total_this_month | {month} total | {month} 합계 |
-
-Category labels: use the table in `docs/SCHEMA.md`.
-
-## 5. Formatting rules
-
-- Amounts: `NumberFormat.currency` per locale. KRW has no decimals. English: `₩12,300`. Korean: `12,300원`. USD: `$12.30`.
-- Dates: `DateFormat.yMMMd(locale)` in lists, `yMMMMd` in detail.
-- Never format money from a `double`; convert from minor units with the `Money` helper.
-
-## 6. Motion (only these)
-
-1. Total on the slip animates from the old value to the new one over about 400 ms when the data changes (`TweenAnimationBuilder`). Skipped when animations are disabled.
-2. New list item slides in once after saving. Delete uses the swipe dismiss with an undo snackbar.
-3. Standard Material page and bottom-sheet transitions. Nothing else.
-
-## 7. Design acceptance checklist
-
-- [ ] Light and dark both look intentional (check the glass opacity in each)
-- [ ] Only the slip, sheets, dialogs and form panel use blur; list scrolling stays smooth on a mid-range phone
-- [ ] All text readable on glass at 200% font scale
-- [ ] Korean strings do not overflow buttons or chips
-- [ ] Amber hints are visible but not alarming; each has text, not color only
-- [ ] Every screen has loading, empty and error states
-- [ ] No hardcoded colors or strings in widget files
+- Header shows current month total on perforated slip. App bar contains Stats, Assistant (sparkle icon, if enabled), and Settings actions.
 
 ---
 
-## 8. Extended UI (v2)
+## 9. Extended UI (v3: AI Assistant & Tips)
 
-Each feature appears only when its flag is on (`docs/ARCHITECTURE.md` section 12.2). Same glass system, tokens and rules as before: blur only on the slip, sheets, dialogs, lock screen and form panel; `FrostedTile` everywhere else.
+Each feature appears only when its flag is on (`aiAssistant`, `tipNotifications`). Same glass system and design tokens apply.
 
-### 8.1 Scan sheet (replaces the two-action sheet)
+### 9.1 Assistant Screen (`assistant_screen.dart`)
 
-A glass bottom sheet with up to four actions, in this order:
-1. **Scan with auto-crop** (only if edge detection is on) - primary style
-2. **Take photo**
-3. **Choose from gallery**
-4. **Enter manually** (opens the Review form empty, today's date, all fields editable)
+Opened via the sparkle icon (`Icons.auto_awesome`) in the home app bar. Displays two tabs: "Chat" and "Tips".
 
-If auto-crop is off, "Take photo" is the primary action.
+```
+┌──────────────────────────────┐
+│ ‹  AI Assistant     [clear]  │  App bar with clear chat button
+│  ┌────────────────────────┐  │
+│  │   [ Chat ]  [ Tips ]   │  │  Segmented tab bar
+│  └────────────────────────┘  │
+│                              │
+│  [ Suggestion Chips Wrap ]   │  "Food in Nov?", "Where to save?", "Compare months"
+│                              │
+│  ┌────────────────────────┐  │
+│  │ User question bubble   │  │  Right-aligned FrostedTile bubble
+│  └────────────────────────┘  │
+│  ┌────────────────────────┐  │
+│  │ Assistant reply bubble │  │  Left-aligned FrostedTile bubble (Lagoon accent)
+│  └────────────────────────┘  │
+│                              │
+│  AI can make mistakes...     │  Permanent disclaimer caption
+│  [ Type a question...  > ]   │  GlassPanel input bar
+└──────────────────────────────┘
+```
 
-### 8.2 Home: search and filter
+- **Suggestion Chips**: 3 horizontal choice chips ("Food in Nov?", "Where can I save?", "Compare this month with last month"). Tapping populates and submits the prompt.
+- **Chat Bubbles**: Frosted fill tiles (no `BackdropFilter` per message for performance). User messages aligned right; Assistant replies aligned left with Iris accent icon.
+- **Input Bar**: Bottom `GlassPanel` with text field and send icon button. Displays typing indicator during API call.
+- **Disclaimer**: Permanent caption at bottom: *"AI can make mistakes. Tips are general, not financial advice."*
+- **First-Use Consent Dialog**: Appears on first chat attempt explaining: *"The AI assistant analyzes precomputed monthly totals and category shares to answer your questions. Merchant names, raw receipts, and card numbers are never shared."* Options: "I agree", "Cancel".
+- **Clear Chat Action**: Top-right app bar action clears in-memory chat turns immediately.
 
-- Below the slip: a `FrostedTile` search field (hint "Search merchant or item"), debounced about 300 ms.
-- Under it, a horizontally scrolling row of chips: **Category** (opens a multi-choice sheet; single selection is enough), **Date range** (system date range picker). Active chips use the Lagoon outline and a check or close icon.
-- When any filter is active: the slip shows the **filtered** total with a caption "Filtered", and a "Clear filters" text button appears.
-- No results: simple state "No receipts match your search." with a "Clear filters" button.
-- Do not hide the Scan button while searching.
+### 9.2 Tips Tab
 
-### 8.3 Duplicate dialog
+Shows a list of generated and scheduled tips in `FrostedTile` cards with category icons, title, body, and timestamp. Unread tips feature a subtle Lagoon dot indicator.
 
-A `GlassPanel` dialog: title "Possible duplicate", body "You already saved a receipt with the same total on this day.", a compact summary tile of the existing receipt (merchant, date, amount), and three actions: **View existing** (secondary), **Save anyway** (primary), **Discard** (text button).
+### 9.3 Settings Additions (v3)
 
-### 8.4 Review additions
+New `FrostedTile` group for AI & Notifications:
+- **AI Assistant switch**: Enables/disables F12 chat.
+- **Tip notifications switch**: Enables/disables F13 local notifications (requests runtime notification permission on toggle).
+- **Tip frequency dropdown**: Off, Weekly, 3 per week, Daily.
+- **Preferred notification time picker**: Clamped between 08:00 and 21:00.
+- **Personalize tips with AI switch**: Disabled if AI assistant switch is off.
+- **Show amounts in notifications switch**: Off by default for lock-screen privacy.
 
-- Under the Category chips: when a learned rule was used, show a caption with a small history icon: "Suggested from your past choices". Changing the category removes the caption.
-- **Items (optional)** section (only if line items are on): a collapsed `FrostedTile` header with the item count. Expanded rows: item name (text), quantity (small numeric), line total (numeric), delete icon. "Add item" button below.
-- Sum line under the list: "Items total ₩X · Receipt total ₩Y". If they differ, show it with the amber hint and the text "Items total differs from the receipt total." (information only; saving is never blocked).
-- Items extracted by AI carry the same "AI-assisted" badge as the receipt.
-
-### 8.5 Detail additions
-
-Below the main panel, a "Items" `FrostedTile` list (name, quantity, amount) when items exist.
-
-### 8.6 Stats additions
-
-Top to bottom: month selector, **Insights**, donut, bars, **Top merchants**.
-- **Insights:** up to 3 `FrostedTile` cards, each with a small icon (trend up, trend down, store, receipt) and one localized sentence. Positive and negative changes do not use red or green alone: the sentence and the arrow icon carry the meaning. Hidden when there is not enough data.
-- **Top merchants:** up to 5 rows: rank number, merchant, visits caption, amount right-aligned, and a thin proportional bar behind or under the row (Lagoon at 25%).
-- **Share action** in the app bar (share icon) opens the PDF sheet (section 8.7).
-
-### 8.7 PDF sheet
-
-A glass bottom sheet: month name, switch "Include receipt photos (larger file)" (off by default), the warning "This file contains your spending data. Share it only with people you trust.", and a primary button "Create PDF". While creating, show a progress indicator in the button. On success the system share sheet opens.
-
-### 8.8 Settings additions
-
-New `FrostedTile` groups:
-- **App lock** switch with the help text from the copy table. Disabled with an explanation if the device has no screen lock.
-- **Backup and restore:** "Create backup" and "Restore from backup" tiles, with the warning "Backup files contain all your receipts and photos. Keep them private." Restore uses a destructive-style confirmation dialog (section 4 copy). Progress and result shown with a dialog or snackbar ("Backup restored.").
-- The "AI double-check" help text also mentions item names (see the copy table).
-
-### 8.9 Lock screen and privacy shield
-
-- **Lock screen:** full-screen `AuroraBackground`, a centered `GlassPanel` with a lock icon, the app name, and an **Unlock** button. The system authentication prompt opens automatically once; the button retries.
-- **Privacy shield:** when the app goes inactive (app switcher), cover it with an opaque Ink (dark) or Fog (light) screen with the app icon. No spending data may appear in the app switcher preview.
-
-### 8.10 Added copy (English and Korean)
+### 9.4 Added Copy (English & Korean)
 
 | Key | English | 한국어 |
 |---|---|---|
-| enterManually | Enter manually | 직접 입력 |
-| scanWithAutoCrop | Scan with auto-crop | 자동 자르기로 스캔 |
-| searchHint | Search merchant or item | 상호 또는 품목 검색 |
-| filterCategory | Category | 카테고리 |
-| filterDateRange | Date range | 기간 |
-| filtered | Filtered | 필터 적용됨 |
-| clearFilters | Clear filters | 필터 초기화 |
-| noResults | No receipts match your search. | 검색 결과가 없어요. |
-| duplicateTitle | Possible duplicate | 중복일 수 있어요 |
-| duplicateBody | You already saved a receipt with the same total on this day. | 같은 날 같은 금액의 영수증이 이미 저장되어 있어요. |
-| viewExisting | View existing | 기존 영수증 보기 |
-| saveAnyway | Save anyway | 그래도 저장 |
-| suggestedFromHistory | Suggested from your past choices | 이전 선택을 바탕으로 추천했어요 |
-| itemsSection | Items (optional) | 품목 (선택) |
-| addItem | Add item | 품목 추가 |
-| itemName | Item name | 품목명 |
-| itemQty | Qty | 수량 |
-| itemsTotalLine | Items total {items} · Receipt total {total} | 품목 합계 {items} · 영수증 합계 {total} |
-| itemsTotalMismatch | Items total differs from the receipt total. | 품목 합계가 영수증 합계와 달라요. |
-| topMerchants | Top merchants | 자주 간 곳 |
-| visitCount | {count, plural, =1{1 visit} other{{count} visits}} | {count}회 방문 |
-| insightsTitle | Insights | 인사이트 |
-| insightMonthUp | Spending is up {percent}% compared with the same period last month. | 지난달 같은 기간보다 지출이 {percent}% 늘었어요. |
-| insightMonthDown | Spending is down {percent}% compared with the same period last month. | 지난달 같은 기간보다 지출이 {percent}% 줄었어요. |
-| insightCategoryUp | {category} spending is up {percent}% from last month. | {category} 지출이 지난달보다 {percent}% 늘었어요. |
-| insightCategoryDown | {category} spending is down {percent}% from last month. | {category} 지출이 지난달보다 {percent}% 줄었어요. |
-| insightTopCategory | {category} is {percent}% of this month's spending. | 이번 달 지출의 {percent}%가 {category}예요. |
-| insightFrequent | You visited {merchant} {count} times this month. | 이번 달 {merchant}에 {count}번 갔어요. |
-| insightBiggest | Your biggest receipt was {amount} at {merchant}. | 가장 큰 지출은 {merchant}의 {amount}이에요. |
-| exportPdf | Export PDF | PDF 내보내기 |
-| includePhotos | Include receipt photos (larger file) | 영수증 사진 포함 (파일이 커져요) |
-| pdfWarning | This file contains your spending data. Share it only with people you trust. | 이 파일에는 지출 정보가 들어 있어요. 믿을 수 있는 사람과만 공유하세요. |
-| createPdf | Create PDF | PDF 만들기 |
-| appLock | App lock | 앱 잠금 |
-| appLockHelp | Asks for your fingerprint, face or phone passcode when opening the app. This locks the screen; it does not encrypt your data. | 앱을 열 때 지문, 얼굴 또는 휴대폰 잠금 번호를 요청해요. 화면을 잠그는 기능이며 데이터를 암호화하지는 않아요. |
-| appLockUnavailable | Set a screen lock on your phone to use this. | 사용하려면 휴대폰에 화면 잠금을 설정해 주세요. |
-| unlock | Unlock | 잠금 해제 |
-| backupRestore | Backup and restore | 백업 및 복원 |
-| createBackup | Create backup | 백업 만들기 |
-| restoreBackup | Restore from backup | 백업에서 복원 |
-| backupWarning | Backup files contain all your receipts and photos. Keep them private. | 백업 파일에는 모든 영수증과 사진이 들어 있어요. 안전하게 보관하세요. |
-| restoreConfirm | Replace all current data with this backup? A safety copy of your current data will be saved first. | 현재 데이터를 이 백업으로 모두 바꿀까요? 현재 데이터는 먼저 안전 사본으로 저장돼요. |
-| restoreDone | Backup restored. | 복원했어요. |
-| restoreInvalid | This file isn't a valid backup. | 올바른 백업 파일이 아니에요. |
-| restoreNewer | This backup was made by a newer version of the app. | 더 새로운 버전의 앱에서 만든 백업이에요. |
-| aiDoubleCheckHelp (updated) | When on, text from receipts the app can't read confidently (including item names) is sent to Google's Gemini API. Photos are never sent. Card and phone numbers are hidden first. | 확인이 어려운 영수증의 텍스트(품목명 포함)만 Google Gemini API로 전송해요. 사진은 전송하지 않으며, 카드·전화번호는 먼저 가려요. |
+| assistantTitle | AI Assistant | AI 어시스턴트 |
+| tabChat | Chat | 대화 |
+| tabTips | Tips | 팁 |
+| chipFoodMonth | How much on food in November? | 11월 식비는 얼마나 썼나요? |
+| chipWhereToSave | Where can I save money? | 어디서 절약할 수 있을까요? |
+| chipCompareMonths | Compare this month with last month | 이번 달과 지난달 지출 비교해줘 |
+| disclaimerText | AI can make mistakes. Tips are general, not financial advice. | AI는 실수할 수 있어요. 팁은 일반적인 조언이며 재무 상담이 아니에요. |
+| clearChat | Clear chat | 대화 삭제 |
+| chatCleared | Chat history cleared. | 대화 내용이 삭제되었어요. |
+| consentTitle | Enable AI Assistant? | AI 어시스턴트를 사용할까요? |
+| consentBody | The AI assistant uses precomputed monthly totals and category shares to answer your questions. Merchant names, item details, and card numbers are never sent. | AI 어시스턴트는 집계된 월별 합계와 카테고리 비율만 사용하여 질문에 답변해요. 상호명, 세부 품목, 카드번호는 절대 전송되지 않아요. |
+| agree | Agree | 동의함 |
+| askAssistantHint | Type a question about your spending... | 지출에 대해 궁금한 점을 물어보세요... |
+| offlineAssistantFallback | Here's what I can tell without AI: | AI 없이 확인할 수 있는 내용이에요: |
+| aiAssistantSetting | AI Assistant | AI 어시스턴트 |
+| aiAssistantHelp | Ask questions about your spending in plain language. | 지출에 대해 대화형으로 질문하고 답변을 받아요. |
+| tipNotifications | Tip notifications | 지출 팁 알림 |
+| tipNotificationsHelp | Receive local notifications with practical money-saving tips. | 실용적인 지출 절약 팁을 알림으로 받아요. |
+| tipFrequency | Notification frequency | 알림 주기 |
+| freqOff | Off | 끄기 |
+| freqWeekly | Weekly | 매주 1회 |
+| freqThreePerWeek | 3 per week | 주 3회 |
+| freqDaily | Daily | 매일 1회 |
+| preferredTime | Preferred time | 알림 시각 |
+| personalizeTipsAi | Personalize tips with AI | AI로 맞춤 팁 생성 |
+| showAmountsInNotifs | Show amounts in notifications | 알림에 금액 표시 |
+| showAmountsHelp | Off by default to keep spending private on your lock screen. | 잠금 화면 보안을 위해 기본적으로 금액을 숨겨요. |
 
-Pluralization and placeholders must use ICU syntax in the ARB files. Translated sentences carry the whole meaning, so do not build sentences by joining fragments in Dart.
+### 9.5 Acceptance Checklist (v3)
 
-### 8.11 Added design acceptance checklist
-
-- [ ] Search and filter work together; clearing returns the full list and the normal total
-- [ ] Duplicate dialog, lock screen and PDF sheet read well in light and dark and at 200% font scale
-- [ ] Items editor rows do not overflow in Korean; the sum line is readable
-- [ ] Insights and top merchants are hidden or replaced by a calm empty state when there is no data
-- [ ] No spending data is visible in the app switcher when the app lock is on
-- [ ] Destructive actions (delete, restore) use the destructive style and a confirmation
+- [ ] Chat bubbles render crisply in Light and Dark modes without scrolling jank.
+- [ ] Suggestion chips properly send prompts and render responses.
+- [ ] Offline query renders friendly message + deterministic insights fallback.
+- [ ] First use presents consent dialog.
+- [ ] Lock-screen notification shows no monetary amounts unless enabled in settings.
+- [ ] Clear chat wipes in-memory messages immediately.
