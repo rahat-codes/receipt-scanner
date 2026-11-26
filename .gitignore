@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 # Environment variables and secrets
 .env
 
+=======
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
 # Miscellaneous
 *.class
 *.log

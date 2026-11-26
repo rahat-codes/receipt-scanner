@@ -8,7 +8,10 @@ import '../../domain/entities/money.dart';
 import '../../domain/entities/parsed_receipt.dart';
 import '../../domain/entities/receipt.dart';
 import '../../l10n/app_localizations.dart';
+<<<<<<< HEAD
 import '../theme/app_colors.dart';
+=======
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
 import '../theme/aurora_background.dart';
 import '../theme/glass_panel.dart';
 import 'review_screen.dart';
@@ -21,7 +24,10 @@ class DetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final repo = ref.watch(receiptRepositoryProvider);
+<<<<<<< HEAD
     final onSurface = Theme.of(context).colorScheme.onSurface;
+=======
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
 
     return AuroraBackground(
       child: Scaffold(
@@ -59,7 +65,11 @@ class DetailScreen extends ConsumerWidget {
                       },
                     ),
                     IconButton(
+<<<<<<< HEAD
                       icon: const Icon(Icons.delete_outline, color: AppColors.error),
+=======
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
@@ -68,7 +78,11 @@ class DetailScreen extends ConsumerWidget {
                             content: Text(l10n.deleteConfirm),
                             actions: [
                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+<<<<<<< HEAD
                               TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.deleteReceipt, style: const TextStyle(color: AppColors.error))),
+=======
+                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.deleteReceipt, style: const TextStyle(color: Colors.red))),
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                             ],
                           ),
                         );
@@ -92,7 +106,11 @@ class DetailScreen extends ConsumerWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (!snapshot.hasData || snapshot.data == null) {
+<<<<<<< HEAD
               return Center(child: Text('Receipt not found', style: TextStyle(color: onSurface)));
+=======
+              return const Center(child: Text('Receipt not found'));
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
             }
             final r = snapshot.data!;
 
@@ -118,6 +136,7 @@ class DetailScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+<<<<<<< HEAD
                           Text(r.merchant, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: onSurface)),
                           const SizedBox(height: 8),
                           Text(DateFormat('yyyy-MM-dd HH:mm').format(r.purchasedAt), style: TextStyle(color: onSurface.withValues(alpha: 0.60))),
@@ -129,6 +148,19 @@ class DetailScreen extends ConsumerWidget {
                               Text(
                                 Money(r.totalMinor, currency: r.currency).format(),
                                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary),
+=======
+                          Text(r.merchant, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Text(DateFormat('yyyy-MM-dd HH:mm').format(r.purchasedAt), style: const TextStyle(color: Colors.grey)),
+                          const Divider(height: 32),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(l10n.total, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                              Text(
+                                Money(r.totalMinor, currency: r.currency).format(),
+                                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF12B5A6)),
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                               ),
                             ],
                           ),

@@ -13,7 +13,10 @@ class SettingsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final settings = ref.watch(settingsControllerProvider);
     final notifier = ref.read(settingsControllerProvider.notifier);
+<<<<<<< HEAD
     final onSurface = Theme.of(context).colorScheme.onSurface;
+=======
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
 
     return AuroraBackground(
       child: Scaffold(
@@ -30,6 +33,7 @@ class SettingsScreen extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+<<<<<<< HEAD
                   Text(l10n.language, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: onSurface)),
                   DropdownButton<String>(
                     value: settings.language,
@@ -41,6 +45,16 @@ class SettingsScreen extends ConsumerWidget {
                       DropdownMenuItem(value: 'system', child: Text(l10n.system, style: TextStyle(color: onSurface))),
                       DropdownMenuItem(value: 'en', child: Text(l10n.english, style: TextStyle(color: onSurface))),
                       DropdownMenuItem(value: 'ko', child: Text(l10n.korean, style: TextStyle(color: onSurface))),
+=======
+                  Text(l10n.language, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  DropdownButton<String>(
+                    value: settings.language,
+                    dropdownColor: Theme.of(context).cardColor,
+                    items: [
+                      DropdownMenuItem(value: 'system', child: Text(l10n.system)),
+                      DropdownMenuItem(value: 'en', child: Text(l10n.english)),
+                      DropdownMenuItem(value: 'ko', child: Text(l10n.korean)),
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                     ],
                     onChanged: (val) {
                       if (val != null) notifier.setLanguage(val);
@@ -56,6 +70,7 @@ class SettingsScreen extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+<<<<<<< HEAD
                   Text(l10n.appearance, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: onSurface)),
                   DropdownButton<String>(
                     value: settings.themeMode,
@@ -67,6 +82,16 @@ class SettingsScreen extends ConsumerWidget {
                       DropdownMenuItem(value: 'system', child: Text(l10n.system, style: TextStyle(color: onSurface))),
                       DropdownMenuItem(value: 'light', child: Text(l10n.light, style: TextStyle(color: onSurface))),
                       DropdownMenuItem(value: 'dark', child: Text(l10n.dark, style: TextStyle(color: onSurface))),
+=======
+                  Text(l10n.appearance, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  DropdownButton<String>(
+                    value: settings.themeMode,
+                    dropdownColor: Theme.of(context).cardColor,
+                    items: [
+                      DropdownMenuItem(value: 'system', child: Text(l10n.system)),
+                      DropdownMenuItem(value: 'light', child: Text(l10n.light)),
+                      DropdownMenuItem(value: 'dark', child: Text(l10n.dark)),
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                     ],
                     onChanged: (val) {
                       if (val != null) notifier.setThemeMode(val);
@@ -85,10 +110,16 @@ class SettingsScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+<<<<<<< HEAD
                       Text(l10n.aiDoubleCheck, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: onSurface)),
                       Switch(
                         value: settings.geminiFallback,
                         activeTrackColor: Theme.of(context).colorScheme.primary,
+=======
+                      Text(l10n.aiDoubleCheck, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Switch(
+                        value: settings.geminiFallback,
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                         onChanged: (val) => notifier.setGeminiFallback(val),
                       ),
                     ],
@@ -96,7 +127,11 @@ class SettingsScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     l10n.aiDoubleCheckHelp,
+<<<<<<< HEAD
                     style: TextStyle(fontSize: 13, color: onSurface.withValues(alpha: 0.60)),
+=======
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+>>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                   ),
                 ],
               ),
