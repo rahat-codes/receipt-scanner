@@ -6,9 +6,10 @@ import '../../application/receipts_controller.dart';
 import '../../application/scan_controller.dart';
 import '../../domain/entities/money.dart';
 import '../../l10n/app_localizations.dart';
+import '../theme/app_colors.dart';
 import '../theme/aurora_background.dart';
 import '../theme/frosted_tile.dart';
-import '../theme/glass_tokens.dart';
+import '../theme/glass_panel.dart';
 import '../theme/perforated_slip.dart';
 import 'detail_screen.dart';
 import 'review_screen.dart';
@@ -27,36 +28,36 @@ class _ReceiptsScreenState extends ConsumerState<ReceiptsScreen> {
 
   void _showScanBottomSheet(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).extension<GlassTheme>()!.fillStrong,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border.all(color: Theme.of(context).extension<GlassTheme>()!.border),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt_rounded),
-              title: Text(l10n.takePhoto),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_rounded),
-              title: Text(l10n.chooseFromGallery),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-          ],
+      builder: (ctx) => GlassPanel(
+        strong: true,
+        radius: 28,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.camera_alt_rounded, color: Theme.of(context).colorScheme.primary),
+                title: Text(l10n.takePhoto, style: const TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.photo_library_rounded, color: Theme.of(context).colorScheme.primary),
+                title: Text(l10n.chooseFromGallery, style: const TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -96,6 +97,7 @@ class _ReceiptsScreenState extends ConsumerState<ReceiptsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final receiptsAsync = ref.watch(receiptsStreamProvider);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return AuroraBackground(
       child: Scaffold(
@@ -134,17 +136,30 @@ class _ReceiptsScreenState extends ConsumerState<ReceiptsScreen> {
                       children: [
                         Text(
                           DateFormat('MMMM yyyy').format(DateTime.now()),
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white70),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: onSurface.withValues(alpha: 0.70),
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           Money(currentMonthTotal, currency: 'KRW').format(),
-                          style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w800, color: Colors.white, fontFeatures: [FontFeature.tabularFigures()]),
+                          style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w800,
+                            color: onSurface,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           l10n.receiptCount(receipts.length),
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.white70),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: onSurface.withValues(alpha: 0.70),
+                          ),
                         ),
                       ],
                     ),
@@ -158,11 +173,21 @@ class _ReceiptsScreenState extends ConsumerState<ReceiptsScreen> {
                     child: Center(
                       child: Column(
                         children: [
-                          const Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
+                          Icon(
+                            Icons.receipt_long_outlined,
+                            size: 64,
+                            color: onSurface.withValues(alpha: 0.40),
+                          ),
                           const SizedBox(height: 16),
-                          Text(l10n.emptyTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(
+                            l10n.emptyTitle,
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: onSurface),
+                          ),
                           const SizedBox(height: 8),
-                          Text(l10n.emptyBody, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                          Text(
+                            l10n.emptyBody,
+                            style: TextStyle(fontSize: 14, color: onSurface.withValues(alpha: 0.60)),
+                          ),
                         ],
                       ),
                     ),
@@ -179,7 +204,7 @@ class _ReceiptsScreenState extends ConsumerState<ReceiptsScreen> {
                                 height: 12,
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Color(0xFF12B5A6),
+                                  color: AppColors.lagoon,
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -191,25 +216,30 @@ class _ReceiptsScreenState extends ConsumerState<ReceiptsScreen> {
                                       children: [
                                         Text(
                                           r.merchant.isEmpty ? l10n.unknownMerchant : r.merchant,
-                                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: onSurface),
                                         ),
                                         if (r.parserSource == 'llm') ...[
                                           const SizedBox(width: 6),
-                                          const Icon(Icons.auto_awesome, size: 14, color: Color(0xFF7C83FD)),
+                                          const Icon(Icons.auto_awesome, size: 14, color: AppColors.iris),
                                         ]
                                       ],
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       DateFormat('MMM dd').format(r.purchasedAt),
-                                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                                      style: TextStyle(fontSize: 13, color: onSurface.withValues(alpha: 0.60)),
                                     ),
                                   ],
                                 ),
                               ),
                               Text(
                                 Money(r.totalMinor, currency: r.currency).format(),
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFeatures: [FontFeature.tabularFigures()]),
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: onSurface,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                ),
                               ),
                             ],
                           ),
@@ -221,8 +251,8 @@ class _ReceiptsScreenState extends ConsumerState<ReceiptsScreen> {
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _showScanBottomSheet(context),
-          backgroundColor: const Color(0xFF12B5A6),
-          foregroundColor: const Color(0xFF0F1B2D),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: AppColors.ink,
           icon: const Icon(Icons.add_a_photo_rounded),
           label: Text(l10n.scanReceipt, style: const TextStyle(fontWeight: FontWeight.bold)),
         ),
@@ -244,14 +274,32 @@ class _ProcessingDialog extends ConsumerWidget {
       statusText = l10n.findingTotal;
     }
 
-    return AlertDialog(
-      backgroundColor: Theme.of(context).extension<GlassTheme>()!.fillStrong,
-      content: Row(
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(width: 24),
-          Text(statusText, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-        ],
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: GlassPanel(
+        strong: true,
+        radius: 20,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 24),
+              Flexible(
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

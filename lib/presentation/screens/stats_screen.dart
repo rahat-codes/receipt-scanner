@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../application/stats_controller.dart';
 import '../../domain/entities/money.dart';
 import '../../l10n/app_localizations.dart';
+import '../theme/app_colors.dart';
 import '../theme/aurora_background.dart';
 import '../theme/glass_panel.dart';
 
@@ -25,6 +26,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final categoryTotalsAsync = ref.watch(categoryTotalsProvider((_selectedMonth, currency)));
     final monthlyTotalsAsync = ref.watch(monthlyTotalsProvider(currency));
+    final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return AuroraBackground(
       child: Scaffold(
@@ -41,7 +43,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.chevron_left_rounded),
+                  icon: Icon(Icons.chevron_left_rounded, color: onSurface),
                   onPressed: () {
                     setState(() {
                       _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1, 1);
@@ -50,10 +52,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 ),
                 Text(
                   DateFormat('MMMM yyyy').format(_selectedMonth),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: onSurface),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.chevron_right_rounded),
+                  icon: Icon(Icons.chevron_right_rounded, color: onSurface),
                   onPressed: () {
                     setState(() {
                       _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 1);
@@ -71,16 +73,16 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.category, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(l10n.category, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: onSurface)),
                     const SizedBox(height: 20),
                     categoryTotalsAsync.when(
                       loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Center(child: Text('Error: $e')),
+                      error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: onSurface))),
                       data: (totals) {
                         if (totals.isEmpty || totals.every((t) => t.totalMinor == 0)) {
                           return SizedBox(
                             height: 200,
-                            child: Center(child: Text(l10n.noReceiptsMonth)),
+                            child: Center(child: Text(l10n.noReceiptsMonth, style: TextStyle(color: onSurface.withValues(alpha: 0.60)))),
                           );
                         }
 
@@ -139,10 +141,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                                       children: [
                                         Container(width: 12, height: 12, decoration: BoxDecoration(shape: BoxShape.circle, color: Color(t.colorValue))),
                                         const SizedBox(width: 8),
-                                        Text(t.categoryKey),
+                                        Text(t.categoryKey, style: TextStyle(color: onSurface)),
                                       ],
                                     ),
-                                    Text('${Money(t.totalMinor).format()} (${pct.toStringAsFixed(1)}%)'),
+                                    Text(
+                                      '${Money(t.totalMinor).format()} (${pct.toStringAsFixed(1)}%)',
+                                      style: TextStyle(color: onSurface, fontWeight: FontWeight.w500),
+                                    ),
                                   ],
                                 ),
                               );
@@ -164,14 +169,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Last 6 Months', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('Last 6 Months', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: onSurface)),
                     const SizedBox(height: 20),
                     monthlyTotalsAsync.when(
                       loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Center(child: Text('Error: $e')),
+                      error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: onSurface))),
                       data: (monthTotals) {
                         if (monthTotals.isEmpty) {
-                          return const SizedBox(height: 150, child: Center(child: Text('No data')));
+                          return SizedBox(height: 150, child: Center(child: Text('No data', style: TextStyle(color: onSurface.withValues(alpha: 0.60)))));
                         }
 
                         final maxVal = monthTotals.map((m) => m.totalMinor).reduce((a, b) => a > b ? a : b).toDouble();
@@ -191,7 +196,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                                       final index = value.toInt();
                                       if (index >= 0 && index < monthTotals.length) {
                                         final parts = monthTotals[index].month.split('-');
-                                        return Text('${parts[1]}월', style: const TextStyle(fontSize: 12));
+                                        return Text('${parts[1]}월', style: TextStyle(fontSize: 12, color: onSurface));
                                       }
                                       return const Text('');
                                     },
@@ -212,7 +217,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                                   barRods: [
                                     BarChartRodData(
                                       toY: m.totalMinor.toDouble(),
-                                      color: isCurrent ? const Color(0xFF12B5A6) : const Color(0xFF7C83FD).withValues(alpha: 0.6),
+                                      color: isCurrent ? Theme.of(context).colorScheme.primary : AppColors.iris.withValues(alpha: 0.60),
                                       width: 18,
                                       borderRadius: BorderRadius.circular(6),
                                     ),

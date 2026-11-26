@@ -8,6 +8,7 @@ import '../../domain/entities/money.dart';
 import '../../domain/entities/parsed_receipt.dart';
 import '../../domain/entities/receipt.dart';
 import '../../l10n/app_localizations.dart';
+import '../theme/app_colors.dart';
 import '../theme/aurora_background.dart';
 import '../theme/glass_panel.dart';
 import 'review_screen.dart';
@@ -20,6 +21,7 @@ class DetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final repo = ref.watch(receiptRepositoryProvider);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
 
     return AuroraBackground(
       child: Scaffold(
@@ -57,7 +59,7 @@ class DetailScreen extends ConsumerWidget {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      icon: const Icon(Icons.delete_outline, color: AppColors.error),
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
@@ -66,7 +68,7 @@ class DetailScreen extends ConsumerWidget {
                             content: Text(l10n.deleteConfirm),
                             actions: [
                               TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
-                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.deleteReceipt, style: const TextStyle(color: Colors.red))),
+                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.deleteReceipt, style: const TextStyle(color: AppColors.error))),
                             ],
                           ),
                         );
@@ -90,7 +92,7 @@ class DetailScreen extends ConsumerWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (!snapshot.hasData || snapshot.data == null) {
-              return const Center(child: Text('Receipt not found'));
+              return Center(child: Text('Receipt not found', style: TextStyle(color: onSurface)));
             }
             final r = snapshot.data!;
 
@@ -116,17 +118,17 @@ class DetailScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(r.merchant, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                          Text(r.merchant, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: onSurface)),
                           const SizedBox(height: 8),
-                          Text(DateFormat('yyyy-MM-dd HH:mm').format(r.purchasedAt), style: const TextStyle(color: Colors.grey)),
-                          const Divider(height: 32),
+                          Text(DateFormat('yyyy-MM-dd HH:mm').format(r.purchasedAt), style: TextStyle(color: onSurface.withValues(alpha: 0.60))),
+                          Divider(height: 32, color: onSurface.withValues(alpha: 0.12)),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(l10n.total, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                              Text(l10n.total, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: onSurface)),
                               Text(
                                 Money(r.totalMinor, currency: r.currency).format(),
-                                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF12B5A6)),
+                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary),
                               ),
                             ],
                           ),

@@ -7,6 +7,7 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import 'application/settings_controller.dart';
 import 'core/providers.dart';
 import 'data/db/app_database.dart';
 import 'data/settings/settings_store.dart';
@@ -46,12 +47,36 @@ class ReceiptScannerApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsControllerProvider);
+
+    ThemeMode mode;
+    switch (settings.themeMode) {
+      case 'light':
+        mode = ThemeMode.light;
+        break;
+      case 'dark':
+        mode = ThemeMode.dark;
+        break;
+      case 'system':
+      default:
+        mode = ThemeMode.system;
+        break;
+    }
+
+    Locale? locale;
+    if (settings.language == 'en') {
+      locale = const Locale('en');
+    } else if (settings.language == 'ko') {
+      locale = const Locale('ko');
+    }
+
     return MaterialApp(
       title: 'Receipt Scanner',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: mode,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: const ReceiptsScreen(),

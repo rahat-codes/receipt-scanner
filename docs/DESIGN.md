@@ -18,9 +18,9 @@ Navigation: one receipts list as home, a floating Scan button, stats and setting
 | Amber | `#F5A524` | "Needs review" highlight |
 | Error | `#E5484D` | Destructive actions and errors |
 
-**Backgrounds** (static, no animation)
-- Light: linear gradient Fog `#EAF1F6` -> `#DCDDFF` -> `#CDF2ED` (top-left to bottom-right), plus two soft radial blobs of Iris and Lagoon at 25% opacity.
-- Dark: `#0B1424` -> `#1A1F4A` -> `#0D3A39`, same blobs at 30% opacity.
+**Backgrounds** (multi-layer ambient gradient + glowing radial orbs)
+- Light: linear gradient `[Color(0xFFEBF2F7), Color(0xFFDCE6F1), Color(0xFFE2EAF4)]`, overlaid with multi-layer glowing ambient radial orbs (Lagoon cyan top-left, Iris purple center-right, Sky blue bottom-left) to provide distinct background contrast behind glass elements.
+- Dark: linear gradient `[Color(0xFF070E1B), Color(0xFF0F172A), Color(0xFF131F37)]`, overlaid with neon teal (`#3DD6C6`), iris violet (`#818CF8`), and sky blue (`#38BDF8`) ambient radial orbs for high-contrast glass refraction.
 
 **Type.** One family: **Pretendard** (free, SIL OFL, covers Korean and Latin). Bundle it in `assets/fonts/` and fall back to the system font. Weights: 400, 600, 800.
 
@@ -65,7 +65,7 @@ Expose tokens through a `ThemeExtension<GlassTheme>` so widgets read `Theme.of(c
 
 - `AuroraBackground`: static gradient plus radial blobs, wraps every screen's `Scaffold` (`backgroundColor: Colors.transparent`).
 - `GlassPanel`: `ClipRRect` -> `BackdropFilter(ImageFilter.blur)` -> `DecoratedBox` (fill, border, shadow). **Wrap in `RepaintBoundary`.** Use for the slip, bottom sheets, dialogs and the review form panel.
-- `FrostedTile`: same fill and border **without** `BackdropFilter`. Use for every row in the receipts list and settings.
+- `FrostedTile`: glass tile with 12px `BackdropFilter` blur, `g.fill` background, subtle border, shadow, and InkWell feedback. Use for every row in the receipts list and settings.
 - `PerforatedSlip`: `GlassPanel` clipped by a `CustomClipper<Path>` that draws semicircular notches (radius about 6 px, spacing about 18 px) along the bottom edge.
 - `AmberHint`: amber 1.5 px outline plus a caption below a field.
 
@@ -203,7 +203,7 @@ Three `FrostedTile` groups:
 - **Appearance:** System / Light / Dark
 - **AI double-check:** switch, with the helper text "When on, text from receipts the app can't read confidently is sent to Google's Gemini API. Photos are never sent. Card and phone numbers are hidden first."
 
-Changes apply immediately and persist.
+Changes apply immediately and persist. Theme mode and locale are dynamically bound via Riverpod `settingsControllerProvider` in `MaterialApp` (`main.dart`).
 
 ## 4. Copy (English and Korean)
 
