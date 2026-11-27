@@ -13,7 +13,7 @@ File: `app.sqlite` in the app's private storage (`drift_flutter` handles the loc
 | `raw_ocr_text` stored | Lets us re-run an improved parser later and debug wrong extractions. |
 | `parser_source` + `confidence` stored | Evaluation and the "AI-assisted" badge. Shows how each record was produced. |
 | Image path stored, image file kept in app storage | Keeps the database small. Delete the file when the row is deleted. |
-| `assistant_tips` stored locally (schema v2) | Remembers scheduled and historical tips; auto-cleans old entries to keep at most 50 rows. |
+| `assistant_tips` stored locally (schemaVersion 1) | Remembers scheduled and historical tips; auto-cleans old entries to keep at most 50 rows. All tables created at version 1. |
 | No `users` table | There is no auth. One device, one user. |
 
 ## 2. Entity relationship
@@ -22,6 +22,7 @@ File: `app.sqlite` in the app's private storage (`drift_flutter` handles the loc
 categories 1 ───< receipts
 receipts   1 ───< receipt_items
 assistant_tips
+merchant_rules
 ```
 
 ## 3. Drift table definitions
@@ -96,7 +97,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 1;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -104,13 +105,8 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
           await _seedCategories();
         },
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.createTable(assistantTips);
-          }
-        },
         beforeOpen: (details) async {
-          await customStatement('PRAGMA foreign_keys = ON');
+          await customStatement('PRAGMA foreign_keys = ON');   // needed for ON DELETE CASCADE on receipt_items
         },
       );
 
@@ -236,9 +232,16 @@ abstract class TipRepository {                                            // F13
 
 ## 8. Extended tables and queries (v2 & v3)
 
-### 8.1 Foreign keys & Migration
-- Schema v1 to v2 migration adds `assistant_tips` table via `onUpgrade`.
-- Backup service validates manifest `schemaVersion` (supports version 1 and 2). Importing a v1 backup into v2 triggers Drift's migration automatically.
+All five tables (`Categories`, `Receipts`, `ReceiptItems`, `MerchantRules`, `AssistantTips`) are created at **schemaVersion 1**, because the full scope is decided on Day 1. No migration is needed for v2 or v3.
+
+### 8.1 Foreign keys must be switched on
+
+SQLite ignores foreign keys unless asked. Add to `MigrationStrategy`:
+```dart
+beforeOpen: (details) async {
+  await customStatement('PRAGMA foreign_keys = ON');   // needed for ON DELETE CASCADE on receipt_items
+},
+```
 
 ### 8.2 Tip Retention Query
 When inserting new tips, keep at most the 50 most recent entries:
@@ -248,3 +251,6 @@ WHERE id NOT IN (
   SELECT id FROM assistant_tips ORDER BY created_at DESC LIMIT 50
 );
 ```
+
+### 8.3 Backup Relevance
+The backup file (`F10`) snapshots `app.sqlite` using `VACUUM INTO`, capturing all tables (`receipts`, `receipt_items`, `categories`, `merchant_rules`, and `assistant_tips`) at `schemaVersion 1`. Restore verifies `manifest.schemaVersion == 1` and runs `PRAGMA integrity_check`.
