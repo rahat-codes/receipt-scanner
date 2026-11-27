@@ -75,7 +75,7 @@ Expose tokens through a `ThemeExtension<GlassTheme>` so widgets read `Theme.of(c
 
 ### 3.1 Receipts (home)
 
-- Header shows current month total on perforated slip. App bar contains Stats, Assistant (sparkle icon, if enabled), and Settings actions.
+- Header shows current month total on perforated slip. App bar contains Stats, Assistant (sparkle icon `Icons.auto_awesome`, if enabled), and Settings actions.
 
 ---
 
@@ -112,7 +112,7 @@ Opened via the sparkle icon (`Icons.auto_awesome`) in the home app bar. Displays
 - **Chat Bubbles**: Frosted fill tiles (no `BackdropFilter` per message for performance). User messages aligned right; Assistant replies aligned left with Iris accent icon.
 - **Input Bar**: Bottom `GlassPanel` with text field and send icon button. Displays typing indicator during API call.
 - **Disclaimer**: Permanent caption at bottom: *"AI can make mistakes. Tips are general, not financial advice."*
-- **First-Use Consent Dialog**: Appears on first chat attempt explaining: *"The AI assistant analyzes precomputed monthly totals and category shares to answer your questions. Merchant names, raw receipts, and card numbers are never shared."* Options: "I agree", "Cancel".
+- **First-Use Consent Dialog**: Appears on first chat attempt explaining: *"The AI assistant uses precomputed monthly totals and category shares to answer your questions. Merchant names, raw receipts, and card numbers are never shared. Note: On the free Gemini API tier, submitted data may be processed by Google to improve its products (https://ai.google.dev/terms)."* Options: "I agree", "Cancel".
 - **Clear Chat Action**: Top-right app bar action clears in-memory chat turns immediately.
 
 ### 9.2 Tips Tab
@@ -143,7 +143,7 @@ New `FrostedTile` group for AI & Notifications:
 | clearChat | Clear chat | 대화 삭제 |
 | chatCleared | Chat history cleared. | 대화 내용이 삭제되었어요. |
 | consentTitle | Enable AI Assistant? | AI 어시스턴트를 사용할까요? |
-| consentBody | The AI assistant uses precomputed monthly totals and category shares to answer your questions. Merchant names, item details, and card numbers are never sent. | AI 어시스턴트는 집계된 월별 합계와 카테고리 비율만 사용하여 질문에 답변해요. 상호명, 세부 품목, 카드번호는 절대 전송되지 않아요. |
+| consentBody | The AI assistant uses precomputed monthly totals and category shares to answer your questions. Merchant names, item details, and card numbers are never sent. Note: On the free Gemini API tier, submitted data may be processed by Google to improve its products (https://ai.google.dev/terms). | AI 어시스턴트는 집계된 월별 합계와 카테고리 비율만 사용하여 질문에 답변해요. 상호명, 세부 품목, 카드번호는 절대 전송되지 않아요. 참고: 무료 Gemini API 티어에서는 전송된 데이터가 Google 제품 개선을 위해 처리될 수 있어요 (https://ai.google.dev/terms). |
 | agree | Agree | 동의함 |
 | askAssistantHint | Type a question about your spending... | 지출에 대해 궁금한 점을 물어보세요... |
 | offlineAssistantFallback | Here's what I can tell without AI: | AI 없이 확인할 수 있는 내용이에요: |
@@ -166,6 +166,6 @@ New `FrostedTile` group for AI & Notifications:
 - [ ] Chat bubbles render crisply in Light and Dark modes without scrolling jank.
 - [ ] Suggestion chips properly send prompts and render responses.
 - [ ] Offline query renders friendly message + deterministic insights fallback.
-- [ ] First use presents consent dialog.
+- [ ] First use presents consent dialog disclosing Google AI free tier terms.
 - [ ] Lock-screen notification shows no monetary amounts unless enabled in settings.
 - [ ] Clear chat wipes in-memory messages immediately.

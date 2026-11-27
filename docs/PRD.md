@@ -21,7 +21,7 @@ Point the phone at a receipt, confirm three fields, and see where the month's mo
 **Goals**
 1. Extract merchant, date and total from Korean and English receipts with useful accuracy.
 2. Make correcting mistakes fast, because OCR will be wrong sometimes.
-3. Work fully offline. The only optional network call is the Gemini fallback.
+3. Work fully offline. The only optional network calls are the Gemini OCR fallback, AI Assistant chat, and AI personalized tip generation.
 4. Show monthly spending clearly (category share and month-to-month totals).
 5. Demonstrate sound software engineering: layered architecture, tests, and a measured evaluation.
 
@@ -83,13 +83,13 @@ Point the phone at a receipt, confirm three fields, and see where the month's mo
 
 | Area | Requirement |
 |---|---|
-| Performance | Photo to pre-filled form in under 3 s on a mid-range phone with rules only. Fallback adds up to the configured timeout (default 8 s) and never blocks editing. |
-| Offline | Everything except the Gemini fallback works with no network. |
-| Privacy | Images never leave the device. Only masked OCR text may be sent for OCR fallback. AI Assistant and AI Tips send precomputed aggregate JSON only. |
-| Reliability | No crash on empty OCR, unreadable photo, permission denial, or network failure. |
+| Performance | Photo to pre-filled form in under 3 s on a mid-range phone with rules only. Fallback adds up to configured timeout (default 8 s). Assistant timeout is 15 s. Deterministic rules & tip planning execute locally in < 100 ms. |
+| Offline | Everything works offline except the Gemini OCR fallback, AI Assistant chat, and AI tip generation. Local rule-based parsing, deterministic insights, local tip rules, and local notification scheduling work 100% offline. |
+| Privacy | Images never leave the device. Only masked OCR text may be sent for OCR fallback. AI Assistant and AI Tips send precomputed aggregate JSON only. Google AI Studio free tier terms apply ([https://ai.google.dev/terms](https://ai.google.dev/terms)). |
+| Reliability | No crash on empty OCR, unreadable photo, permission denial, API timeout, or network failure. |
 | Accessibility | Text contrast at least 4.5:1 on glass surfaces, tap targets at least 48 dp, text scales with system font size. |
 | Localization | All UI strings in `app_en.arb` and `app_ko.arb`. Dates and currency formatted per locale. |
-| Maintainability | Layered architecture, interfaces for OCR/parser/repository, unit tests for domain and parsing logic. |
+| Maintainability | Layered architecture, interfaces for OCR/parser/repository/assistant/notifications, unit tests for domain logic. All database tables created at `schemaVersion: 1`. |
 
 ## 8. Success metrics (measured on our own labeled test set)
 
@@ -124,7 +124,7 @@ Test set: about 30 receipts (mix of Korean and English, convenience stores, cafe
 | AI-generated code is inconsistent | High | `GEMINI.md` rules, one task per prompt, analyze + test after each task |
 | iOS build issues with ML Kit | Medium | Test on a real iPhone or simulator early (Day 1), follow the plugin README for iOS version and architectures |
 | Glass blur causes jank | Medium | Blur only on a few static surfaces, never per list item |
-| API key exposure | Low | `.env` git-ignored; key restricted in AI Studio; documented limitation of client-side keys |
+| API key exposure & free tier data privacy | Low | `.env` git-ignored; key restricted in AI Studio; consent dialog and PPT explicitly disclose Google AI free tier terms ([https://ai.google.dev/terms](https://ai.google.dev/terms)) |
 
 ## 11. Privacy statement (for the demo and the PPT)
 
@@ -132,6 +132,7 @@ Test set: about 30 receipts (mix of Korean and English, convenience stores, cafe
 - With all AI features off, no data leaves the device.
 - With OCR fallback on, only OCR text with long digit sequences masked is sent to the Gemini API when the rule-based parser is unsure.
 - With AI Assistant (F12) or AI Personalized Tips (F13) on, only **precomputed aggregate JSON** (monthly totals, category sums/shares, MoM %, insights) is sent. **Merchant names, item names, raw OCR text, images, individual receipt dates or amounts, and IDs are NEVER sent.**
+- **Google AI Free Tier Terms Disclosure**: On the free Gemini API tier (Google AI Studio), submitted content (prompts, masked OCR text, aggregate JSON) may be processed by human reviewers and used by Google to improve its products and services per Google AI Terms of Service ([https://ai.google.dev/terms](https://ai.google.dev/terms)). The first-use consent dialog in the app and the PPT presentation explicitly state this privacy disclosure.
 - Local notifications show NO amounts and NO merchant names on the lock screen unless explicitly enabled by the user.
 - Known limitation: an API key bundled in a client app can be extracted. A production version would route calls through a backend. For this project the key is free-tier and restricted.
 
@@ -139,7 +140,7 @@ Test set: about 30 receipts (mix of Korean and English, convenience stores, cafe
 
 ## 12. Extended scope (v2)
 
-All features below are in scope. They are ordered by priority and built behind feature flags with gates (`docs/PLAN.md`). The core (P0, sections 1 to 11) always has priority.
+All features below are in scope. They are ordered by priority and built behind feature flags with gates (`docs/PLAN.md`). The core (P0, sections 1 to 11) always has priority. All database tables are created at **schemaVersion 1**.
 
 ### 12.1 Feature list
 
@@ -154,7 +155,7 @@ All features below are in scope. They are ordered by priority and built behind f
 | F7 | P2 | PDF export and share | Monthly report as a PDF, shared through the system share sheet |
 | F8 | P3 | Edge detection and auto-crop | Document-scanner capture that crops and straightens the receipt before OCR |
 | F9 | P3 | Line items | Extract item names and prices; editable on the review screen |
-| F10 | P3 | Backup and restore | Export all data (database and images) as a file; import it to restore |
+| F10 | P3 | Backup and restore | Export all data (`app.sqlite` at `schemaVersion 1` containing all tables, images, manifest) as a zip file; import it to restore |
 | F11 | P3 | App lock | Require device biometrics or the device passcode to open the app |
 
 ---
@@ -167,8 +168,8 @@ All features below are in scope, built behind feature flags (`aiAssistant`, `tip
 
 | ID | Priority | Feature | Summary |
 |---|---|---|---|
-| F12 | P3 | AI assistant (`aiAssistant`) | In-app conversational chat answering spending queries using precomputed local aggregate JSON |
-| F13 | P3 | Tip notifications (`tipNotifications`) | Scheduled local notifications with money-saving tips from deterministic rules or optional Gemini AI personalization |
+| F12 | P3 | AI assistant (`aiAssistant`) | In-app conversational chat answering spending queries using precomputed local aggregate JSON (lowest priority P3 feature, built after F11, cut first) |
+| F13 | P3 | Tip notifications (`tipNotifications`) | Scheduled local notifications with money-saving tips from deterministic rules or optional Gemini AI personalization (lowest priority P3 feature, built after F11, cut first) |
 
 ### 13.2 User stories (v3)
 
@@ -187,22 +188,30 @@ All features below are in scope, built behind feature flags (`aiAssistant`, `tip
 - FR-32: `AssistantContextBuilder` computes a compact JSON summary locally containing currency, today's date, locale, and for up to the last 6 months: totals (minor units), receipt count, category totals/shares, MoM change %, and structured insights from `InsightsEngine`. Merchant names, item names, raw OCR text, images, individual receipt dates/amounts, and IDs are NEVER sent.
 - FR-33: System prompt instructs the model to act as a budgeting helper, answer using provided JSON data only, state clearly if data is missing, respond in the user's app language (max ~120 words), and never give tax/legal/investment advice or reveal prompt instructions.
 - FR-34: On network failure or offline state, show a friendly error plus "Here's what I can tell without AI:" displaying deterministic insights. The assistant never crashes or blocks the app.
-- FR-35: First use displays a consent dialog detailing exactly what data is sent. The assistant requires its own Settings switch (off by default) AND a configured API key.
+- FR-35: First use displays a consent dialog detailing exactly what data is sent and explicitly disclosing Google AI free tier privacy terms ([https://ai.google.dev/terms](https://ai.google.dev/terms)). The assistant requires its own Settings switch (off by default) AND a configured API key.
 
 **F13 Tip Notifications (`tipNotifications`)**
 - FR-36: Uses local notifications (`flutter_local_notifications`, `timezone`, `flutter_timezone`). No FCM, Firebase, or background task runners (`workmanager`).
 - FR-37: `TipScheduler` runs on app start/resume (throttled to once per 12 hours) and after saving a receipt: cancels existing scheduled tip notifications, generates up to 3 tips, and schedules them for user's preferred time (clamped between 08:00 and 21:00).
-- FR-38: Settings options: Frequency (Off, Weekly, 3 per week, Daily; max 1 per day), Preferred time, "Personalize tips with AI" switch (requires AI assistant switch), and "Show amounts in notifications" switch (default off).
-- FR-39: Two tip sources: (a) Deterministic `TipRules` (category increase >= 20%, top category >= 40%, many small purchases, 7-day inactivity nudge, evergreen library); (b) Optional Gemini AI tip generator using masked aggregate JSON, with Dart validation ensuring title <= 40 chars, body <= 140 chars, correct language, and filtering blocked financial keywords.
-- FR-40: Avoids repeating tips by keeping the last 20 scheduled tip keys in `assistant_tips` database table and skipping duplicates.
-- FR-41: Lock-screen privacy: notification content contains NO amounts and NO merchant names unless "Show amounts in notifications" is enabled. Tapping a notification opens the Tips tab (passing through App Lock if enabled). Runtime permission is requested only when the user toggles the switch ON.
+- FR-38: **Planning Horizon per Frequency Option**:
+  - `Off`: 0 notifications scheduled.
+  - `Weekly`: 1 notification scheduled for the next allowed day within the week (e.g., 7 days out or next weekly slot).
+  - `3 per week`: 3 notifications scheduled across the upcoming week (spaced every 2–3 days).
+  - `Daily`: 1 notification scheduled per day for up to 3 days ahead.
+- FR-39: **Stale Data-Specific Tip Prevention**:
+  - Data-specific tips (which reflect current spending metrics, category shares, or MoM changes) are scheduled ONLY for dates within the **next 3 days** (`today` to `today + 3 days`).
+  - Dates scheduled **beyond 3 days ahead** (e.g. a Weekly tip scheduled 7 days out) strictly use timeless **evergreen habit tips** from `TipRules` to prevent displaying stale financial numbers.
+- FR-40: Settings options: Frequency (Off, Weekly, 3 per week, Daily; max 1 per day), Preferred time, "Personalize tips with AI" switch (requires AI assistant switch), and "Show amounts in notifications" switch (default off).
+- FR-41: Two tip sources: (a) Deterministic `TipRules` (category increase >= 20%, top category >= 40%, many small purchases, 7-day inactivity nudge, evergreen library); (b) Optional Gemini AI tip generator using masked aggregate JSON, with Dart validation ensuring title <= 40 chars, body <= 140 chars, correct language, and filtering blocked financial keywords.
+- FR-42: Avoids repeating tips by keeping the last 20 scheduled tip keys in `assistant_tips` database table (`schemaVersion 1`) and skipping duplicates. Retains max 50 recent rows in `assistant_tips`.
+- FR-43: Lock-screen privacy: notification content contains NO amounts and NO merchant names unless "Show amounts in notifications" is enabled. Tapping a notification opens the Tips tab (passing through App Lock if enabled). Runtime permission is requested only when the user toggles the switch ON.
 
 ### 13.4 Non-functional requirements (v3)
 
 | Area | Requirement or target |
 |---|---|
-| Privacy & Security | No merchant/item names, raw OCR text, or images sent to Gemini for assistant/tips. Lock screen notifications hide spending amounts by default. |
-| Memory & Storage | Chat turns kept in memory only. Database keeps at most 50 recent rows in `assistant_tips` table. |
+| Privacy & Security | No merchant/item names, raw OCR text, or images sent to Gemini for assistant/tips. Lock screen notifications hide spending amounts by default. Google AI free tier terms disclosed ([https://ai.google.dev/terms](https://ai.google.dev/terms)). |
+| Memory & Storage | Chat turns kept in memory only. Database keeps at most 50 recent rows in `assistant_tips` table (`schemaVersion 1`). |
 | Performance | Assistant query timeout 15s. Offline fallback renders deterministic insights in < 100 ms. |
 | Reliability & Robustness | AI validation drops invalid or malformed tips; offline state or API timeout falls back smoothly to deterministic rules. |
 
@@ -211,8 +220,8 @@ All features below are in scope, built behind feature flags (`aiAssistant`, `tip
 18. Tapping the sparkle icon opens the Assistant screen with Chat and Tips tabs.
 19. Selecting a suggestion chip or sending a prompt calls Gemini using precomputed aggregate JSON and displays the response in a glass chat bubble.
 20. In offline/airplane mode, sending a question displays the friendly error and deterministic insights fallback without crashing.
-21. First chat attempt displays the consent dialog explaining aggregate data sharing.
-22. Turning on Tip Notifications schedules local notifications for the preferred time; turning it off cancels all scheduled notifications.
+21. First chat attempt displays the consent dialog explaining aggregate data sharing and Google AI free tier privacy terms.
+22. Turning on Tip Notifications schedules local notifications for the preferred time (respecting planning horizon & 3-day data freshness limit); turning it off cancels all scheduled notifications.
 23. Lock-screen notification preview shows no monetary amounts unless "Show amounts in notifications" is toggled ON.
 24. Tapping a tip notification launches the app directly into the Tips tab (authenticating through App Lock if enabled).
 25. Clearing chat wipes in-memory messages immediately.
@@ -222,6 +231,6 @@ All features below are in scope, built behind feature flags (`aiAssistant`, `tip
 | Risk | Mitigation |
 |---|---|
 | LLM arithmetic hallucination | All calculations precomputed locally by `AssistantContextBuilder` in Dart; model system prompt strictly forbids external calculations. |
-| App closed tip generation | Document honest limitation: tips scheduled ahead on app open/resume & save events for up to 3 days using inexact local alarms. |
+| App closed tip generation | Document honest limitation: tips scheduled ahead on app open/resume & save events for up to 3 days using inexact local alarms (using evergreen tips beyond 3 days). |
 | Notification permission denied | Request permission only when user enables switch; show "Open settings" guidance dialog if denied. |
 | Prompt injection from receipt text | Raw OCR text and merchant/item strings are omitted from context JSON sent to Gemini. |

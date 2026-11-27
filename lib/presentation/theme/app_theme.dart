@@ -12,7 +12,6 @@ class AppTheme {
       brightness: Brightness.light,
       primary: AppColors.lagoon,
       secondary: AppColors.iris,
-<<<<<<< HEAD
       surface: Colors.white,
       onSurface: AppColors.ink,
     ),
@@ -41,8 +40,6 @@ class AppTheme {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-=======
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
     ),
     extensions: [GlassTheme.light],
   );
@@ -56,7 +53,6 @@ class AppTheme {
       brightness: Brightness.dark,
       primary: AppColors.lagoonDark,
       secondary: AppColors.iris,
-<<<<<<< HEAD
       surface: const Color(0xFF1E293B),
       onSurface: Colors.white,
     ),
@@ -85,8 +81,6 @@ class AppTheme {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-=======
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
     ),
     extensions: [GlassTheme.dark],
   );

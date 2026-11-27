@@ -5,10 +5,7 @@ import 'package:intl/intl.dart';
 import '../../application/stats_controller.dart';
 import '../../domain/entities/money.dart';
 import '../../l10n/app_localizations.dart';
-<<<<<<< HEAD
 import '../theme/app_colors.dart';
-=======
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
 import '../theme/aurora_background.dart';
 import '../theme/glass_panel.dart';
 
@@ -29,10 +26,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final categoryTotalsAsync = ref.watch(categoryTotalsProvider((_selectedMonth, currency)));
     final monthlyTotalsAsync = ref.watch(monthlyTotalsProvider(currency));
-<<<<<<< HEAD
     final onSurface = Theme.of(context).colorScheme.onSurface;
-=======
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
 
     return AuroraBackground(
       child: Scaffold(
@@ -49,11 +43,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-<<<<<<< HEAD
                   icon: Icon(Icons.chevron_left_rounded, color: onSurface),
-=======
-                  icon: const Icon(Icons.chevron_left_rounded),
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                   onPressed: () {
                     setState(() {
                       _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1, 1);
@@ -62,17 +52,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 ),
                 Text(
                   DateFormat('MMMM yyyy').format(_selectedMonth),
-<<<<<<< HEAD
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: onSurface),
                 ),
                 IconButton(
                   icon: Icon(Icons.chevron_right_rounded, color: onSurface),
-=======
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right_rounded),
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                   onPressed: () {
                     setState(() {
                       _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 1);
@@ -90,28 +73,16 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-<<<<<<< HEAD
                     Text(l10n.category, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: onSurface)),
                     const SizedBox(height: 20),
                     categoryTotalsAsync.when(
                       loading: () => const Center(child: CircularProgressIndicator()),
                       error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: onSurface))),
-=======
-                    Text(l10n.category, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 20),
-                    categoryTotalsAsync.when(
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Center(child: Text('Error: $e')),
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                       data: (totals) {
                         if (totals.isEmpty || totals.every((t) => t.totalMinor == 0)) {
                           return SizedBox(
                             height: 200,
-<<<<<<< HEAD
                             child: Center(child: Text(l10n.noReceiptsMonth, style: TextStyle(color: onSurface.withValues(alpha: 0.60)))),
-=======
-                            child: Center(child: Text(l10n.noReceiptsMonth)),
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                           );
                         }
 
@@ -170,7 +141,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                                       children: [
                                         Container(width: 12, height: 12, decoration: BoxDecoration(shape: BoxShape.circle, color: Color(t.colorValue))),
                                         const SizedBox(width: 8),
-<<<<<<< HEAD
                                         Text(t.categoryKey, style: TextStyle(color: onSurface)),
                                       ],
                                     ),
@@ -178,12 +148,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                                       '${Money(t.totalMinor).format()} (${pct.toStringAsFixed(1)}%)',
                                       style: TextStyle(color: onSurface, fontWeight: FontWeight.w500),
                                     ),
-=======
-                                        Text(t.categoryKey),
-                                      ],
-                                    ),
-                                    Text('${Money(t.totalMinor).format()} (${pct.toStringAsFixed(1)}%)'),
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                                   ],
                                 ),
                               );
@@ -205,7 +169,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-<<<<<<< HEAD
                     Text('Last 6 Months', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: onSurface)),
                     const SizedBox(height: 20),
                     monthlyTotalsAsync.when(
@@ -214,16 +177,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                       data: (monthTotals) {
                         if (monthTotals.isEmpty) {
                           return SizedBox(height: 150, child: Center(child: Text('No data', style: TextStyle(color: onSurface.withValues(alpha: 0.60)))));
-=======
-                    const Text('Last 6 Months', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 20),
-                    monthlyTotalsAsync.when(
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Center(child: Text('Error: $e')),
-                      data: (monthTotals) {
-                        if (monthTotals.isEmpty) {
-                          return const SizedBox(height: 150, child: Center(child: Text('No data')));
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                         }
 
                         final maxVal = monthTotals.map((m) => m.totalMinor).reduce((a, b) => a > b ? a : b).toDouble();
@@ -243,11 +196,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                                       final index = value.toInt();
                                       if (index >= 0 && index < monthTotals.length) {
                                         final parts = monthTotals[index].month.split('-');
-<<<<<<< HEAD
                                         return Text('${parts[1]}월', style: TextStyle(fontSize: 12, color: onSurface));
-=======
-                                        return Text('${parts[1]}월', style: const TextStyle(fontSize: 12));
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                                       }
                                       return const Text('');
                                     },
@@ -268,11 +217,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                                   barRods: [
                                     BarChartRodData(
                                       toY: m.totalMinor.toDouble(),
-<<<<<<< HEAD
                                       color: isCurrent ? Theme.of(context).colorScheme.primary : AppColors.iris.withValues(alpha: 0.60),
-=======
-                                      color: isCurrent ? const Color(0xFF12B5A6) : const Color(0xFF7C83FD).withValues(alpha: 0.6),
->>>>>>> 81934c3d0910c9ee266a23bdc899ef19ea894423
                                       width: 18,
                                       borderRadius: BorderRadius.circular(6),
                                     ),

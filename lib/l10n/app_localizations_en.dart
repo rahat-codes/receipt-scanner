@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -90,8 +89,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkThis => 'Check this: it may be wrong.';
 
   @override
-  String get unreadable =>
-      'We couldn\'t read this receipt. Enter the details below.';
+  String get unreadable => 'We couldn\'t read this receipt. Enter the details below.';
 
   @override
   String get unknownMerchant => 'Unknown merchant';
@@ -127,8 +125,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiDoubleCheck => 'AI double-check';
 
   @override
-  String get aiDoubleCheckHelp =>
-      'When on, text from receipts the app can\'t read confidently is sent to Google\'s Gemini API. Photos are never sent. Card and phone numbers are hidden first.';
+  String get aiDoubleCheckHelp => 'When on, text from receipts the app can\'t read confidently is sent to Google\'s Gemini API. Photos are never sent. Card and phone numbers are hidden first.';
 
   @override
   String totalThisMonth(String month) {

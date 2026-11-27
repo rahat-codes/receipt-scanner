@@ -26,29 +26,29 @@ So the setup has three ideas:
 
 ### Feature ownership
 
-| Feature | Owner | Notes |
-|---|---|---|
-| F1 Add manually | B | UI route plus Review form |
-| F2 Search and filter | B | Repository query plus home UI |
-| F3 Top merchants | B (UI) with A's `top_merchants.dart` | A provides pure function |
-| F4 Duplicate warning | A (logic) and B (dialog) | A first, then B |
-| F5 Learn from corrections | A | `MerchantRules` table created by B |
-| F6 Spending insights | A (engine) and B (cards) | |
-| F7 PDF export | B | Embedded Korean TTF font |
-| F8 Edge detection | A | Evaluation numbers are A's |
-| F9 Line items | A (extractors, evaluation) and B (items editor UI) | |
-| F10 Backup and restore | B | Needs explicit database path |
-| F11 App lock | B | Test on both platforms |
-| F12 AI Assistant | A (context builder, service, eval) and B (AssistantScreen UI) | Chat tab, consent dialog |
-| F13 Tip notifications | A (tip rules, planner, AI tips) and B (notification service, DB table, settings) | Local notifications |
+| Feature | Owner | Build Timeline & Order | Notes |
+|---|---|---|---|
+| F1 Add manually | B | Day 3 | UI route plus Review form |
+| F2 Search and filter | B | Day 4 | Repository query plus home UI |
+| F3 Top merchants | B (UI) with A's `top_merchants.dart` | Day 4/5 | A provides pure function |
+| F4 Duplicate warning | A (logic) and B (dialog) | Day 4 | A first, then B |
+| F5 Learn from corrections | A | Day 4 | `MerchantRules` table created by B |
+| F6 Spending insights | A (engine) and B (cards) | Day 6 | |
+| F7 PDF export | B | Day 6 | Embedded Korean TTF font |
+| F8 Edge detection | A | Day 6 (P3) | Evaluation numbers are A's |
+| F9 Line items | A (extractors, eval) and B (items editor) | Day 6 (P3) | |
+| F10 Backup and restore | B | Day 6 (P3) | Needs explicit database path |
+| F11 App lock | B | Day 6 (P3) | Test on both platforms |
+| F12 AI Assistant | A (context builder, service, eval) and B (AssistantScreen UI) | Day 6/7 (Lowest P3, after F11) | Built ONLY after Gate 2 passes |
+| F13 Tip notifications | A (tip rules, planner, AI tips) and B (notification service, DB table, settings) | Day 6/7 (Lowest P3, after F12) | Cut first if time is short |
 
 ### Handoffs
 
 | From -> To | What | When |
 |---|---|---|
-| A -> B | Domain interfaces, entities, fakes (`FakeAssistantService`, `FakeNotificationService`) | Day 1 / Task 1 |
+| A -> B | Domain interfaces, entities, fakes (`FakeAssistantService`, `FakeNotificationService` under `lib/data/fakes/`) | Day 1 / Task 1 |
 | A -> B | `AssistantContextBuilder` and `TipRules` | Day 6 / Task 2 & 6 |
-| B -> A | `AssistantTips` table migration and `TipRepository` | Day 6 / Task 5 |
+| B -> A | `AssistantTips` table (`schemaVersion 1`) and `TipRepository` | Day 2 / Task 5 |
 
 ## 3. GitHub setup & Workflow
 
