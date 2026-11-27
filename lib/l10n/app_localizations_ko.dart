@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -120,8 +119,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get aiDoubleCheck => 'AI 재확인';
 
   @override
-  String get aiDoubleCheckHelp =>
-      '확인이 어려운 영수증의 텍스트만 Google Gemini API로 전송해요. 사진은 전송하지 않으며, 카드·전화번호는 먼저 가려요.';
+  String get aiDoubleCheckHelp => '확인이 어려운 영수증의 텍스트만 Google Gemini API로 전송해요. 사진은 전송하지 않으며, 카드·전화번호는 먼저 가려요.';
 
   @override
   String totalThisMonth(String month) {
