@@ -1,10 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
+import '../domain/entities/category.dart';
 import '../domain/entities/receipt.dart';
 
 final receiptsStreamProvider = StreamProvider<List<Receipt>>((ref) {
   final repo = ref.watch(receiptRepositoryProvider);
   return repo.watchAll();
+});
+
+final categoriesProvider = FutureProvider<List<Category>>((ref) async {
+  final repo = ref.watch(receiptRepositoryProvider);
+  return repo.getCategories();
 });
 
 class ReceiptsController {

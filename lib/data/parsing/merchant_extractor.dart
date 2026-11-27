@@ -20,6 +20,7 @@ class MerchantExtractor {
       }
     }
 
+    // WHY: Fallback to the first line near the top that is not a phone, address, date, or pure number.
     final sortedLines = List<OcrLine>.from(ocr.lines)..sort((a, b) => a.top.compareTo(b.top));
     for (final line in sortedLines) {
       final t = line.text.trim();
@@ -33,11 +34,11 @@ class MerchantExtractor {
 
   static bool _isIgnoredLine(String text) {
     if (RegExp(r'^\d+[\d\-()\s]*$').hasMatch(text)) return true;
-    if (text.contains('전화') || text.contains('TEL') || text.contains('No.')) return true;
+    if (text.contains('전화') || text.contains('TEL') || text.contains('No.') || text.contains('사업자')) return true;
     return false;
   }
 
   static String _clean(String text) {
-    return text.replaceAll(RegExp(r"[^\w\s가-힣&()\'-]"), '').trim();
+    return text.replaceAll(RegExp(r"[^\w\s가-힣&()\'-]"), '').replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 }

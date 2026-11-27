@@ -8,7 +8,8 @@ class GlassPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final g = Theme.of(context).extension<GlassTheme>()!;
+    final g = Theme.of(context).extension<GlassTheme>() ??
+        (Theme.of(context).brightness == Brightness.dark ? GlassTheme.dark : GlassTheme.light);
     // WHY: opaque surface when the user asked for high contrast; blur hurts legibility for some users.
     final opaque = MediaQuery.of(context).highContrast;
     final fill = opaque ? g.opaqueSurface : (strong ? g.fillStrong : g.fill);

@@ -6,7 +6,8 @@ void main() {
     test('KRW formatting and major units', () {
       const money = Money(15400, currency: 'KRW');
       expect(money.majorUnits, 15400.0);
-      expect(money.format('ko_KR'), '₩15,400');
+      expect(money.format('ko_KR'), '15,400원');
+      expect(money.format('en_US'), '₩15,400');
     });
 
     test('USD formatting and major units', () {

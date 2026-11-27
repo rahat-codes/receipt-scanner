@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 part 'app_database.g.dart';
 
@@ -63,9 +67,17 @@ class AssistantTips extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+LazyDatabase _openConnection() {
+  return LazyDatabase(() async {
+    final dbFolder = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dbFolder.path, 'app.sqlite'));
+    return NativeDatabase.createInBackground(file);
+  });
+}
+
 @DriftDatabase(tables: [Categories, Receipts, ReceiptItems, MerchantRules, AssistantTips])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase(super.e);
+  AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
   int get schemaVersion => 1;
@@ -73,6 +85,7 @@ class AppDatabase extends _$AppDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
+          await customStatement('PRAGMA foreign_keys = ON');
           await m.createAll();
           await _seedCategories();
         },
