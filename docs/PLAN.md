@@ -11,7 +11,7 @@ The scope is the core app (P0) plus all extended features (v2 and v3: see `docs/
 | **P0 core** | Scan -> review -> save -> list, stats (donut, bars), settings, Korean and English UI, parser tests, evaluation | Never cut |
 | **P1** | F1 Add manually, F2 Search and filter, F3 Top merchants, F4 Duplicate warning | Small, build first |
 | **P2** | F5 Learn from corrections, F6 Spending insights, F7 PDF export and share | Build after P1 |
-| **P3** | F8 Edge detection, F9 Line items, F10 Backup and restore, F11 App lock, **F12 AI Assistant (`aiAssistant`)**, **F13 Tip Notifications (`tipNotifications`)** | Risky, gated, may stay off |
+| **P3** | F8 Edge detection, F9 Line items, F10 Backup and restore, F11 App lock, **F12 AI Assistant (`aiAssistant`)**, **F13 Tip Notifications (`tipNotifications`)** | Risky, gated, lowest priority |
 
 ## 2. Gates
 
@@ -21,7 +21,7 @@ The scope is the core app (P0) plus all extended features (v2 and v3: see `docs/
 | **Gate 2** | End of Day 5 | P0 and P1 finished; first evaluation numbers exist | Do not start new P2 or P3 features (including F12 and F13). Finish only what is already in progress |
 | **Gate 3 (freeze)** | Morning of Day 7 | Nothing new after this | Unfinished features stay behind their flag (off) and go on the "future work" slide |
 
-**Strict Gate Check Rule for F12 & F13:** F12 and F13 are P3 features. On Day 1/2, Gate 2 has NOT passed yet. Therefore, update documentation ONLY in STEP 1. Implementation (STEP 2) occurs ONLY after Gate 2 passes or if the user explicitly orders "override gate".
+**Strict Gate Check Rule for F12 & F13:** F12 and F13 are lowest-priority P3 features. On Day 1/2, Gate 2 has NOT passed yet. Therefore, update documentation ONLY in STEP 1. Implementation (STEP 2) occurs ONLY on Day 6/7 after Gate 2 passes and F11 is built, or after the user explicitly writes `"override gate"` or `"start STEP 2"`.
 
 A feature flag is set to `true` only when it meets the Definition of done in `GEMINI.md` **and** has been tested on a real device.
 
@@ -30,11 +30,11 @@ A feature flag is set to `true` only when it meets the Definition of done in `GE
 | Day | Goals | Done when |
 |---|---|---|
 | **1** | Skeleton, packages, `feature_flags.dart`, domain contracts and fakes, theme tokens, camera and gallery capture, ML Kit OCR on a real photo on **Android and iOS**, GitHub, CI, branch protection. Check whether a cross-platform document-scanner package exists (for F8) | OCR text of a real receipt shows on both platforms; PR #1 merged |
-| **2** | `Money`, extractors, `RuleBasedParser` with tests. Drift schema with **all four tables**, repository (including search, month receipts, duplicates, items), tests. Start collecting receipts | Parser tests pass on at least 10 snippets; repository tests pass |
+| **2** | `Money`, extractors, `RuleBasedParser` with tests. Drift schema with **all five tables** at `schemaVersion 1`, repository (including search, month receipts, duplicates, items, tips), tests. Start collecting receipts | Parser tests pass on at least 10 snippets; repository tests pass |
 | **3** | `ScanController`, image storage, permissions. Review form with amber hints and validation, manual entry route (F1), save to DB. **Gate 1** | Scan -> edit -> save -> row in DB on a real phone |
 | **4** | Home (slip, list, empty state, scan sheet), detail, delete with undo, processing dialog. Search and filter (F2). `normalizeMerchant`, duplicate detector (F4), category suggester and learning (F5) with tests | Core loop complete; search works; duplicate dialog works |
 | **5** | Stats (donut, bars), top merchants (F3), Settings, ARB strings in both languages. Masking, `LlmParser`, `CompositeParser`. Start `RuleItemsExtractor` behind its flag. **Gate 2** | P0 and P1 complete; evaluation of rules vs composite runs |
-| **6** | Insights engine (F6), PDF export (F7), then P3 in this order if the gates allow: edge detection (F8) with before/after evaluation, line items (F9) with evaluation, backup and restore (F10), app lock (F11), **AI assistant (F12)**, **tip notifications (F13)**. Dark mode and accessibility pass | Each finished feature verified on a device before its flag goes on |
+| **6** | Insights engine (F6), PDF export (F7), then P3 in this order if the gates allow: edge detection (F8), line items (F9), backup and restore (F10), app lock (F11), **AI assistant (F12)**, **tip notifications (F13)**. Dark mode and accessibility pass | Each finished feature verified on a device before its flag goes on |
 | **7** | **Freeze in the morning.** Fix bugs, final device tests on both platforms, README, demo video, PPT, clean-clone test, tag `v1.0` | PRD acceptance checklist passes for every feature whose flag is on |
 
 ## 4. Cut order (when behind)
@@ -54,16 +54,16 @@ Drop in this order, first item first:
 
 ## 5. Gemini prompts for v3 Tasks (STEP 2 prompts)
 
-- **T1**: "Implement feature flags (`aiAssistant`, `tipNotifications`), domain entities (`AssistantTip`), domain interfaces (`AssistantService`, `TipGenerator`, `NotificationService`, `TipRepository`), and fakes (`FakeAssistantService`, `FakeNotificationService`) in `core/providers.dart`."
+- **T1**: "Implement feature flags (`aiAssistant`, `tipNotifications`), domain entities (`AssistantTip`), domain interfaces (`AssistantService`, `TipGenerator`, `NotificationService`, `TipRepository`), and fakes (`FakeAssistantService`, `FakeNotificationService` under `lib/data/fakes/`) in `core/providers.dart`."
 - **T2**: "Implement `AssistantContextBuilder` in `domain/logic/` with comprehensive table-driven unit tests verifying aggregate JSON generation (no merchants, items, or raw OCR)."
-- **T3**: "Implement `GeminiAssistantService` in `data/assistant/` with strict system prompt, 15s timeout, offline/error fallback to deterministic insights, and unit tests using mocktail."
-- **T4**: "Implement `AssistantScreen` and `AssistantController` with Chat tab, 3 suggestion chips, `FrostedTile` bubbles, input bar, first-use consent dialog, and clear chat action."
-- **T5**: "Update `AppDatabase` schema to version 2 adding `AssistantTips` table and migration strategy `onUpgrade`. Implement `DriftTipRepository` with 50-row retention cleanup and repository tests."
+- **T3**: "Implement `GeminiAssistantService` in `data/assistant/` with system prompt in `assistant_prompt.dart`, 15s timeout from `.env`, offline/error fallback to deterministic insights, and unit tests using mocktail."
+- **T4**: "Implement `AssistantScreen` and `AssistantController` with Chat tab, 3 suggestion chips, `FrostedTile` bubbles, input bar, first-use consent dialog (disclosing Google AI free tier terms `https://ai.google.dev/terms`), and clear chat action."
+- **T5**: "Update `AppDatabase` at `schemaVersion 1` with `AssistantTips` table. Implement `DriftTipRepository` with 50-row retention cleanup and repository tests."
 - **T6**: "Implement `TipRules` in `domain/logic/` and evergreen localized tip library with unit tests."
-- **T7**: "Implement `LocalNotificationService`, `TipPlanner`, and `TipScheduler` with 12h throttling, preferred time clamping (08:00–21:00), lock-screen privacy rules, and settings toggles."
+- **T7**: "Implement `LocalNotificationService`, `TipPlanner`, and `TipScheduler` with 12h throttling, preferred time clamping (08:00–21:00), 3-day data freshness limit (evergreen tips beyond 3 days), lock-screen privacy rules, and settings controls."
 - **T8**: "Implement `GeminiTipGenerator` in `data/assistant/` with aggregate JSON input and Dart output validation (title <= 40, body <= 140, forbidden word filter)."
 - **T9**: "Create `eval/assistant/questions.json` (15 questions), `tool/assistant_eval.dart`, and `tool/eval_assistant.py` to evaluate accuracy, hallucinations, language match, and latency."
-- **T10**: "Fill ARB keys for English and Korean, run accessibility check, and perform final documentation sync."
+- **T10**: "Fill ARB keys for English and Korean, perform Android/iOS platform setup, run accessibility check, and perform final documentation sync."
 
 ## 6. Evaluation deliverables (for the PPT)
 
@@ -71,3 +71,17 @@ Drop in this order, first item first:
 - Fallback trigger rate and median processing time
 - Assistant evaluation: accuracy of answers against precomputed data, hallucinated numbers count, language match %, median response latency
 - Feature status table: on, beta or future work
+
+## 7. PPT outline (I will generate the deck when the app and numbers exist)
+
+1. Title and team (roles as in `docs/COLLABORATION.md`)
+2. Problem and target users
+3. Solution and demo screenshots
+4. Architecture: layers, pipeline diagram, feature flags
+5. Key design decisions and trade-offs (rules first, on-device OCR, integer money, merchant normalization, aggregate JSON for assistant)
+6. AI engineering: parser, confidence score, Gemini fallback, line items, learning from corrections, conversational assistant, tip generator
+7. Evaluation results (the tables)
+8. Extended features: what works, with screenshots (search, insights, PDF, backup, lock, assistant chat, tip notifications)
+9. Privacy and limitations (including honest limits: lock is not encryption, client-side API key, Google AI free tier privacy terms `https://ai.google.dev/terms`)
+10. Process: GitHub workflow, how AI-generated code was verified, gates and what we cut
+11. Future work and Q&A
