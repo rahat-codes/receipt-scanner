@@ -22,6 +22,7 @@ class TotalExtractor {
   static TotalExtractionResult extract(OcrResult ocr) {
     final lines = ocr.lines;
     
+    // WHY: Scan for total keywords first, ignoring exclusion keywords (e.g. 부가세, SUBTOTAL).
     for (int i = 0; i < lines.length; i++) {
       final lineText = lines[i].text.toLowerCase();
       
@@ -31,14 +32,14 @@ class TotalExtractor {
 
       if (_totalKeywords.any((kw) => lineText.contains(kw))) {
         var amount = _parseAmount(lines[i].text);
-        if (amount != null && amount > 0) {
+        if (amount != null && amount > 0 && amount < 100000000) {
           final currency = _detectCurrency(lines[i].text);
           return TotalExtractionResult(totalMinor: amount, currency: currency, confidence: 0.45);
         }
         
         if (i + 1 < lines.length) {
           amount = _parseAmount(lines[i + 1].text);
-          if (amount != null && amount > 0) {
+          if (amount != null && amount > 0 && amount < 100000000) {
             final currency = _detectCurrency(lines[i + 1].text);
             return TotalExtractionResult(totalMinor: amount, currency: currency, confidence: 0.40);
           }
@@ -46,17 +47,32 @@ class TotalExtractor {
       }
     }
 
+    // WHY: Fallback to largest plausible amount in the bottom half of the receipt.
     int maxAmount = 0;
     String currency = 'KRW';
     
-    for (final line in lines) {
-      final text = line.text;
+    final halfIndex = (lines.length / 2).floor();
+    for (int i = halfIndex; i < lines.length; i++) {
+      final text = lines[i].text;
       if (_exclusionKeywords.any((ex) => text.toLowerCase().contains(ex))) continue;
       
       final amount = _parseAmount(text);
-      if (amount != null && amount > maxAmount && amount < 100000000) {
+      if (amount != null && amount > maxAmount && amount > 0 && amount < 100000000) {
         maxAmount = amount;
         currency = _detectCurrency(text);
+      }
+    }
+
+    if (maxAmount == 0) {
+      for (final line in lines) {
+        final text = line.text;
+        if (_exclusionKeywords.any((ex) => text.toLowerCase().contains(ex))) continue;
+
+        final amount = _parseAmount(text);
+        if (amount != null && amount > maxAmount && amount > 0 && amount < 100000000) {
+          maxAmount = amount;
+          currency = _detectCurrency(text);
+        }
       }
     }
 
@@ -68,19 +84,24 @@ class TotalExtractor {
   }
 
   static int? _parseAmount(String text) {
-    // Find numeric patterns with optional decimal or comma
-    final match = RegExp(r'\b\d{1,3}(?:[,\s]\d{3})*(?:[.,]\d{2})?\b|\b\d+(?:[.,]\d{2})?\b').firstMatch(text);
-    if (match != null) {
+    final matches = RegExp(r'\b\d{1,3}(?:[,\s]\d{3})*(?:[.,]\d{2})?\b|\b\d+(?:[.,]\d{2})?\b').allMatches(text);
+    int? maxVal;
+    for (final match in matches) {
       var numStr = match.group(0)!.replaceAll(RegExp(r'[, ]'), '');
+      int? val;
       if (numStr.contains('.')) {
         final parts = numStr.split('.');
         final dollars = int.tryParse(parts[0]) ?? 0;
         final cents = int.tryParse(parts[1]) ?? 0;
-        return dollars * 100 + cents;
+        val = dollars * 100 + cents;
+      } else {
+        val = int.tryParse(numStr);
       }
-      return int.tryParse(numStr);
+      if (val != null && (maxVal == null || val > maxVal)) {
+        maxVal = val;
+      }
     }
-    return null;
+    return maxVal;
   }
 
   static String _detectCurrency(String text) {

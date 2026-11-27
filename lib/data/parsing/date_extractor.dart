@@ -3,40 +3,75 @@ import '../../domain/entities/ocr_result.dart';
 class DateExtractor {
   static DateTime? extract(OcrResult ocr) {
     final text = ocr.fullText;
-
-    final patterns = [
-      RegExp(r'\b(20\d{2})[-/. ](\d{1,2})[-/. ](\d{1,2})\b'),
-      RegExp(r'\b(20\d{2})년\s*(\d{1,2})월\s*(\d{1,2})일\b'),
-      RegExp(r'\b(\d{2})[-/. ](\d{1,2})[-/. ](\d{1,2})\b'),
-      RegExp(r'\b(\d{1,2})/(\d{1,2})/(20\d{2})\b'),
-    ];
-
     final now = DateTime.now();
 
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(text);
-      if (match != null) {
-        try {
-          int year = 0, month = 0, day = 0;
-          if (pattern.pattern.startsWith(r'\b(\d{1,2})/')) {
-            month = int.parse(match.group(1)!);
-            day = int.parse(match.group(2)!);
-            year = int.parse(match.group(3)!);
-          } else {
-            year = int.parse(match.group(1)!);
-            if (year < 100) year += 2000;
-            month = int.parse(match.group(2)!);
-            day = int.parse(match.group(3)!);
+    // 1. yyyy-mm-dd, yyyy/mm/dd, yyyy.mm.dd (using backreference \2 for matching the same separator)
+    final ymdRegex = RegExp(r'\b(20\d{2})([-/.])(\d{1,2})\2(\d{1,2})\b');
+    final ymdMatch = ymdRegex.firstMatch(text);
+    if (ymdMatch != null) {
+      try {
+        final year = int.parse(ymdMatch.group(1)!);
+        final month = int.parse(ymdMatch.group(3)!);
+        final day = int.parse(ymdMatch.group(4)!);
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          final date = DateTime(year, month, day);
+          if (!date.isAfter(now.add(const Duration(days: 1)))) {
+            return date;
           }
+        }
+      } catch (_) {}
+    }
 
-          if (year >= 2000 && year <= now.year + 1 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-            final date = DateTime(year, month, day);
-            if (!date.isAfter(now.add(const Duration(days: 1)))) {
-              return date;
-            }
+    // 2. yyyy년 m월 d일
+    final korRegex = RegExp(r'(20\d{2})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일');
+    final korMatch = korRegex.firstMatch(text);
+    if (korMatch != null) {
+      try {
+        final year = int.parse(korMatch.group(1)!);
+        final month = int.parse(korMatch.group(2)!);
+        final day = int.parse(korMatch.group(3)!);
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          final date = DateTime(year, month, day);
+          if (!date.isAfter(now.add(const Duration(days: 1)))) {
+            return date;
           }
-        } catch (_) {}
-      }
+        }
+      } catch (_) {}
+    }
+
+    // 3. mm/dd/yyyy
+    final mdyRegex = RegExp(r'\b(\d{1,2})/(\d{1,2})/(20\d{2})\b');
+    final mdyMatch = mdyRegex.firstMatch(text);
+    if (mdyMatch != null) {
+      try {
+        final month = int.parse(mdyMatch.group(1)!);
+        final day = int.parse(mdyMatch.group(2)!);
+        final year = int.parse(mdyMatch.group(3)!);
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          final date = DateTime(year, month, day);
+          if (!date.isAfter(now.add(const Duration(days: 1)))) {
+            return date;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 4. yy-mm-dd
+    final yyRegex = RegExp(r'\b(\d{2})([-/.])(\d{1,2})\2(\d{1,2})\b');
+    final yyMatch = yyRegex.firstMatch(text);
+    if (yyMatch != null) {
+      try {
+        int year = int.parse(yyMatch.group(1)!);
+        if (year < 100) year += 2000;
+        final month = int.parse(yyMatch.group(3)!);
+        final day = int.parse(yyMatch.group(4)!);
+        if (year >= 2000 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          final date = DateTime(year, month, day);
+          if (!date.isAfter(now.add(const Duration(days: 1)))) {
+            return date;
+          }
+        }
+      } catch (_) {}
     }
 
     return null;

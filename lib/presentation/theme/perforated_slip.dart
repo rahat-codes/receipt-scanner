@@ -39,7 +39,8 @@ class PerforatedSlip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final g = Theme.of(context).extension<GlassTheme>()!;
+    final g = Theme.of(context).extension<GlassTheme>() ??
+        (Theme.of(context).brightness == Brightness.dark ? GlassTheme.dark : GlassTheme.light);
     final opaque = MediaQuery.of(context).highContrast;
     final fill = opaque ? g.opaqueSurface : g.fillStrong;
 

@@ -16,12 +16,18 @@ class Money {
   }
 
   String format([String? locale]) {
+    final effectiveLocale = locale ?? Intl.getCurrentLocale();
     if (currency == 'USD') {
-      final format = NumberFormat.currency(locale: locale ?? 'en_US', symbol: '\$', decimalDigits: 2);
+      final format = NumberFormat.currency(locale: effectiveLocale, symbol: '\$', decimalDigits: 2);
       return format.format(majorUnits);
     } else {
-      final format = NumberFormat.currency(locale: locale ?? 'ko_KR', symbol: '₩', decimalDigits: 0);
-      return format.format(majorUnits);
+      if (effectiveLocale.startsWith('ko')) {
+        final format = NumberFormat.currency(locale: 'ko_KR', symbol: '', decimalDigits: 0);
+        return '${format.format(majorUnits).trim()}원';
+      } else {
+        final format = NumberFormat.currency(locale: 'en_US', symbol: '₩', decimalDigits: 0);
+        return format.format(majorUnits);
+      }
     }
   }
 

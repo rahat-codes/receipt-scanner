@@ -16,7 +16,7 @@ class RuleBasedParser implements ReceiptParser {
     final needsReview = <FieldFlag>{};
 
     if (totalResult.totalMinor != null && totalResult.totalMinor! > 0) {
-      confidence += 0.10; // plausible amount bonus
+      confidence += 0.10; // consistency bonus
     } else {
       needsReview.add(FieldFlag.total);
     }
@@ -31,6 +31,12 @@ class RuleBasedParser implements ReceiptParser {
       confidence += 0.20;
     } else {
       needsReview.add(FieldFlag.merchant);
+    }
+
+    if (totalResult.currency.isNotEmpty) {
+      // currency valid
+    } else {
+      needsReview.add(FieldFlag.currency);
     }
 
     confidence = confidence.clamp(0.0, 1.0);
