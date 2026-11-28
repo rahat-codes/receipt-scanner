@@ -122,6 +122,78 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearance => 'Appearance';
 
   @override
+  String get privacy => 'Privacy';
+
+  @override
+  String get privacyDetail => 'Receipt photos and spending data stay on this device. No data is uploaded to external servers.';
+
+  @override
+  String get deleteAllData => 'Delete all data';
+
+  @override
+  String get deleteAllDataConfirm => 'Delete all receipts, rules, and assistant data? This cannot be undone.';
+
+  @override
+  String get allDataDeleted => 'All data deleted';
+
+  @override
+  String get lastSixMonths => 'Last 6 Months';
+
+  @override
+  String get receiptNotFound => 'Receipt not found';
+
+  @override
+  String get askAboutSpending => 'Ask about your spending...';
+
+  @override
+  String get consentTitle => 'Enable AI Assistant?';
+
+  @override
+  String get consentBody => 'Questions and necessary spending numbers (amounts, dates, and up to 10 merchant names per answer) are sent to Google\'s Gemini API. Photos, raw receipt text and item names are never sent. On the free tier, Google may use submitted content to improve its products and human reviewers may read it. Do not submit real personal data. This demo uses test data. This demo is for testing only and is not offered to users in the EEA, Switzerland or the UK.\n\nSee https://ai.google.dev/gemini-api/terms';
+
+  @override
+  String get agreeAndContinue => 'Agree and continue';
+
+  @override
+  String get notNow => 'Not now';
+
+  @override
+  String get aiAssistantSetting => 'AI Assistant';
+
+  @override
+  String get aiAssistantHelp => 'Ask questions about your spending in plain language.';
+
+  @override
+  String get askAssistantHint => 'Type a question about your spending...';
+
+  @override
+  String get offlineAssistantFallback => 'Here\'s what I can tell without AI:';
+
+  @override
+  String get clearChat => 'Clear chat';
+
+  @override
+  String get disclaimer => 'AI can make mistakes. Not financial advice.';
+
+  @override
+  String get chipThisMonthTotal => 'This month\'s total';
+
+  @override
+  String get chipTopCategory => 'Top category this month';
+
+  @override
+  String get chipQ1 => 'How much did I spend this month?';
+
+  @override
+  String get chipQ2 => 'Which category costs me the most?';
+
+  @override
+  String get chipQ3 => 'Compare this month with last month';
+
+  @override
+  String get chipQ4 => 'What was my biggest purchase?';
+
+  @override
   String get aiDoubleCheck => 'AI double-check';
 
   @override

@@ -26,11 +26,7 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.0
   meta: ^1.16.0
-  pdf: ^3.13.1
-  share_plus: ^13.3.1
-  archive: ^4.7.1
-  file_picker: ^13.4.1
-  local_auth: ^3.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -38,6 +34,8 @@ dev_dependencies:
   drift_dev: ^2.22.0
   build_runner: ^2.4.13
   mocktail: ^1.0.4
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 flutter:
   uses-material-design: true
@@ -45,3 +43,24 @@ flutter:
   assets:
     - .env
     - .env.example
+    - assets/branding/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/branding/icon_ios_1024.png"
+  adaptive_icon_background: "assets/branding/icon_android_background.png"
+  adaptive_icon_foreground: "assets/branding/icon_android_foreground.png"
+  remove_alpha_ios: true
+  min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#0F1B2D"
+  image: "assets/branding/logo_rounded_512.png"
+  color_dark: "#0F1B2D"
+  image_dark: "assets/branding/logo_rounded_512.png"
+  android_12:
+    color: "#0F1B2D"
+    image: "assets/branding/logo_rounded_512.png"
+    color_dark: "#0F1B2D"
+    image_dark: "assets/branding/logo_rounded_512.png"

@@ -7,7 +7,7 @@ import '../theme/aurora_background.dart';
 import '../theme/glass_panel.dart';
 
 /// TEMPORARY DAY 1 DEBUG SCREEN
-/// WHY: Verify ML Kit OCR with Korean script recognizer on real device camera/gallery photos.
+/// WHY: Verify ML Kit OCR with Korean script recognizer on real device camera/gallery photos and measure timings.
 class OcrDebugScreen extends ConsumerStatefulWidget {
   const OcrDebugScreen({super.key});
 
@@ -19,6 +19,8 @@ class _OcrDebugScreenState extends ConsumerState<OcrDebugScreen> {
   final ImagePicker _picker = ImagePicker();
   String? _imagePath;
   String _ocrResultText = 'Select an image to run OCR.';
+  int? _ocrTimeMs;
+  int? _parseTimeMs;
   bool _isLoading = false;
 
   Future<void> _pickAndRunOcr(ImageSource source) async {
@@ -29,13 +31,25 @@ class _OcrDebugScreenState extends ConsumerState<OcrDebugScreen> {
       _imagePath = image.path;
       _isLoading = true;
       _ocrResultText = 'Running ML Kit OCR (Korean script)...';
+      _ocrTimeMs = null;
+      _parseTimeMs = null;
     });
 
     try {
       final ocrService = ref.read(ocrServiceProvider);
+      final swOcr = Stopwatch()..start();
       final result = await ocrService.read(image.path);
+      swOcr.stop();
+
+      final parser = ref.read(ruleParserProvider);
+      final swParse = Stopwatch()..start();
+      await parser.parse(result);
+      swParse.stop();
+
       setState(() {
         _ocrResultText = result.isEmpty ? 'No text recognized.' : result.fullText;
+        _ocrTimeMs = swOcr.elapsedMilliseconds;
+        _parseTimeMs = swParse.elapsedMilliseconds;
         _isLoading = false;
       });
     } catch (e) {
@@ -87,6 +101,21 @@ class _OcrDebugScreenState extends ConsumerState<OcrDebugScreen> {
                   child: Image.file(File(_imagePath!), height: 200, fit: BoxFit.cover),
                 ),
                 const SizedBox(height: 24),
+              ],
+              if (_ocrTimeMs != null && _parseTimeMs != null) ...[
+                GlassPanel(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Text('OCR Time: ${_ocrTimeMs}ms', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('Parse Time: ${_parseTimeMs}ms', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
               ],
               GlassPanel(
                 child: Padding(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,30 +17,75 @@ import 'presentation/theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (_) {
-    // If .env is missing or cannot be loaded, continue with defaults.
-  }
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  final prefs = await SharedPreferences.getInstance();
-  final settingsStore = SettingsStore(prefs);
+    // WHY: Intercept Flutter framework UI rendering errors with a friendly error screen.
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+    };
 
-  // WHY: Open database from an explicit file path for production persistence and backup support.
-  final dbDir = await getApplicationDocumentsDirectory();
-  final dbFile = File(p.join(dbDir.path, 'app.sqlite'));
-  final database = AppDatabase(NativeDatabase.createInBackground(dbFile));
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return Material(
+        color: const Color(0xFF0F1B2D),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.error_outline_rounded, color: Colors.amber, size: 48),
+                SizedBox(height: 16),
+                Text(
+                  'Something went wrong',
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Please restart the application.',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    };
 
-  runApp(
-    ProviderScope(
-      overrides: [
-        settingsStoreProvider.overrideWithValue(settingsStore),
-        databaseProvider.overrideWithValue(database),
-      ],
-      child: const ReceiptScannerApp(),
-    ),
-  );
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (_) {}
+
+    SharedPreferences prefs;
+    try {
+      prefs = await SharedPreferences.getInstance();
+    } catch (_) {
+      rethrow;
+    }
+
+    final settingsStore = SettingsStore(prefs);
+
+    AppDatabase database;
+    try {
+      final dbDir = await getApplicationDocumentsDirectory();
+      final dbFile = File(p.join(dbDir.path, 'app.sqlite'));
+      database = AppDatabase(NativeDatabase(dbFile));
+    } catch (_) {
+      database = AppDatabase(NativeDatabase.memory());
+    }
+
+    runApp(
+      ProviderScope(
+        overrides: [
+          settingsStoreProvider.overrideWithValue(settingsStore),
+          databaseProvider.overrideWithValue(database),
+        ],
+        child: const ReceiptScannerApp(),
+      ),
+    );
+  }, (error, stack) {
+    // WHY: Catch uncaught async errors safely without exposing user receipt data.
+  });
 }
 
 class ReceiptScannerApp extends ConsumerWidget {

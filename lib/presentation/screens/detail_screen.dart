@@ -102,7 +102,7 @@ class DetailScreen extends ConsumerWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (!snapshot.hasData || snapshot.data == null) {
-              return Center(child: Text('Receipt not found', style: TextStyle(color: onSurface)));
+              return Center(child: Text(l10n.receiptNotFound, style: TextStyle(color: onSurface)));
             }
             final r = snapshot.data!;
             final cat = categoriesMap[r.categoryId];

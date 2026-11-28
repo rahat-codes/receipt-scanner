@@ -12,4 +12,5 @@ class FeatureFlags {
   static const bool lineItems = false;         // F9
   static const bool backupRestore = false;     // F10
   static const bool appLock = false;           // F11
+  static const bool aiAssistant = true;        // F12 AI Assistant chat
 }

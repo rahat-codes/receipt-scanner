@@ -26,6 +26,17 @@ void main() {
       expect(parsed.confidence, greaterThan(0.8));
     });
 
+    test('caps oversized OCR text and line counts defensively', () async {
+      final longText = 'A' * 15000;
+      final manyLines = List.generate(300, (i) => OcrLine('Line $i', i / 300.0));
+      final ocr = OcrResult(fullText: longText, lines: manyLines);
+
+      final parser = RuleBasedParser();
+      final parsed = await parser.parse(ocr);
+
+      expect(parsed, isNotNull);
+    });
+
     test('handles receipt with nothing parseable (all null, confidence near 0, all flagged)', () async {
       final ocr = OcrResult(
         fullText: '',

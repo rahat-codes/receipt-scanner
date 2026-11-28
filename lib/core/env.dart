@@ -6,4 +6,6 @@ class Env {
   static String get geminiBaseUrl => dotenv.env['GEMINI_BASE_URL'] ?? 'https://generativelanguage.googleapis.com/v1beta';
   static int get geminiTimeoutSeconds => int.tryParse(dotenv.env['GEMINI_TIMEOUT_SECONDS'] ?? '8') ?? 8;
   static double get llmFallbackThreshold => double.tryParse(dotenv.env['LLM_FALLBACK_THRESHOLD'] ?? '0.70') ?? 0.70;
+  static int get assistantTimeoutSeconds => int.tryParse(dotenv.env['ASSISTANT_TIMEOUT_SECONDS'] ?? '20') ?? 20;
+  static int get assistantMaxToolCalls => int.tryParse(dotenv.env['ASSISTANT_MAX_TOOL_CALLS'] ?? '3') ?? 3;
 }

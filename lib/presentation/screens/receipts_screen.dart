@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../../application/receipts_controller.dart';
 import '../../application/scan_controller.dart';
+import '../../core/feature_flags.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/money.dart';
 import '../../l10n/app_localizations.dart';
@@ -15,6 +16,7 @@ import '../theme/aurora_background.dart';
 import '../theme/frosted_tile.dart';
 import '../theme/glass_panel.dart';
 import '../theme/perforated_slip.dart';
+import 'assistant_screen.dart';
 import 'detail_screen.dart';
 import 'review_screen.dart';
 import 'settings_screen.dart';
@@ -70,7 +72,12 @@ class _ReceiptsScreenState extends ConsumerState<ReceiptsScreen> {
   Future<void> _pickImage(ImageSource source) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      final photo = await _picker.pickImage(source: source);
+      final photo = await _picker.pickImage(
+        source: source,
+        maxWidth: 2000,
+        maxHeight: 2000,
+        imageQuality: 85,
+      );
       if (photo == null) return; // cancelled picker
 
       final appDir = await getApplicationDocumentsDirectory();
@@ -210,6 +217,25 @@ class _ReceiptsScreenState extends ConsumerState<ReceiptsScreen> {
                     ),
                   ),
                 ),
+                if (FeatureFlags.aiAssistant) ...[
+                  const SizedBox(height: 12),
+                  FrostedTile(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AssistantScreen())),
+                    child: Row(
+                      children: [
+                        Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            l10n.askAboutSpending,
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: onSurface),
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded, color: onSurface),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
 
                 if (receipts.isEmpty)
@@ -218,10 +244,10 @@ class _ReceiptsScreenState extends ConsumerState<ReceiptsScreen> {
                     child: Center(
                       child: Column(
                         children: [
-                          Icon(
-                            Icons.receipt_long_outlined,
-                            size: 64,
-                            color: onSurface.withValues(alpha: 0.40),
+                          Image.asset(
+                            'assets/branding/logo_rounded.png',
+                            width: 80,
+                            height: 80,
                           ),
                           const SizedBox(height: 16),
                           Text(

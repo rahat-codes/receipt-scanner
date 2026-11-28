@@ -1,0 +1,17 @@
+[
+  {"id": 1, "question": "How much did I spend this month?", "expected_total": 5500},
+  {"id": 2, "question": "What was my spending total in March 2026?", "expected_total": 5500},
+  {"id": 3, "question": "Which category cost me the most?", "expected_category": "food"},
+  {"id": 4, "question": "Top merchants this month", "expected_merchant": "스타벅스 대연점"},
+  {"id": 5, "question": "Find my receipts this month", "expected_count": 1},
+  {"id": 6, "question": "Compare this month with last month", "expected_trend": true},
+  {"id": 7, "question": "How much did I spend on food?", "expected_total": 5500},
+  {"id": 8, "question": "What is my total grocery spending?", "expected_total": 0},
+  {"id": 9, "question": "Show me my biggest purchase", "expected_amount": 5500},
+  {"id": 10, "question": "How many receipts do I have?", "expected_count": 1},
+  {"id": 11, "question": "Did I spend anything on transport?", "expected_total": 0},
+  {"id": 12, "question": "What are my top spending places?", "expected_merchant": "스타벅스 대연점"},
+  {"id": 13, "question": "Summarize my spending in March", "expected_total": 5500},
+  {"id": 14, "question": "How much did I spend yesterday?", "expected_total": 0},
+  {"id": 15, "question": "Give me an overview of my expenses", "expected_total": 5500}
+]

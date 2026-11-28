@@ -1,3 +1,6 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -82,6 +85,16 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     super.dispose();
   }
 
+  Future<void> _cleanupImage() async {
+    // WHY: Clean up orphan image file on discard or failed save if not an existing receipt edit.
+    if (widget.existingReceipt == null && widget.imagePath.isNotEmpty) {
+      try {
+        final file = File(widget.imagePath);
+        if (file.existsSync()) file.deleteSync();
+      } catch (_) {}
+    }
+  }
+
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
     final merchant = _merchantController.text.trim();
@@ -91,49 +104,53 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
       return;
     }
 
-    final totalMinor = _currency == 'USD' ? (totalVal * 100).round() : totalVal.round();
-    final controller = ref.read(receiptsControllerProvider);
+    try {
+      final totalMinor = _currency == 'USD' ? (totalVal * 100).round() : totalVal.round();
+      final controller = ref.read(receiptsControllerProvider);
 
-    final source = widget.existingReceipt != null
-        ? 'manual'
-        : (_hasEdited ? 'manual' : widget.parsed.source.name);
+      final source = widget.existingReceipt != null
+          ? 'manual'
+          : (_hasEdited ? 'manual' : widget.parsed.source.name);
 
-    if (widget.existingReceipt != null) {
-      final updated = Receipt(
-        id: widget.existingReceipt!.id,
-        merchant: merchant.isEmpty ? l10n.unknownMerchant : merchant,
-        purchasedAt: _selectedDate,
-        totalMinor: totalMinor,
-        currency: _currency,
-        categoryId: _selectedCategoryId!,
-        imagePath: widget.imagePath,
-        rawOcrText: widget.existingReceipt!.rawOcrText,
-        parserSource: source,
-        confidence: 1.0,
-        createdAt: widget.existingReceipt!.createdAt,
-        updatedAt: DateTime.now(),
-      );
-      await controller.updateReceipt(updated);
-    } else {
-      final newReceipt = Receipt(
-        id: 0,
-        merchant: merchant.isEmpty ? l10n.unknownMerchant : merchant,
-        purchasedAt: _selectedDate,
-        totalMinor: totalMinor,
-        currency: _currency,
-        categoryId: _selectedCategoryId!,
-        imagePath: widget.imagePath,
-        rawOcrText: '',
-        parserSource: source,
-        confidence: widget.parsed.confidence,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      await controller.saveReceipt(newReceipt);
+      if (widget.existingReceipt != null) {
+        final updated = Receipt(
+          id: widget.existingReceipt!.id,
+          merchant: merchant.isEmpty ? l10n.unknownMerchant : merchant,
+          purchasedAt: _selectedDate,
+          totalMinor: totalMinor,
+          currency: _currency,
+          categoryId: _selectedCategoryId!,
+          imagePath: widget.imagePath,
+          rawOcrText: widget.existingReceipt!.rawOcrText,
+          parserSource: source,
+          confidence: 1.0,
+          createdAt: widget.existingReceipt!.createdAt,
+          updatedAt: DateTime.now(),
+        );
+        await controller.updateReceipt(updated);
+      } else {
+        final newReceipt = Receipt(
+          id: 0,
+          merchant: merchant.isEmpty ? l10n.unknownMerchant : merchant,
+          purchasedAt: _selectedDate,
+          totalMinor: totalMinor,
+          currency: _currency,
+          categoryId: _selectedCategoryId!,
+          imagePath: widget.imagePath,
+          rawOcrText: '',
+          parserSource: source,
+          confidence: widget.parsed.confidence,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await controller.saveReceipt(newReceipt);
+      }
+
+      if (!mounted) return;
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } catch (_) {
+      await _cleanupImage();
     }
-
-    if (!mounted) return;
-    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   Future<void> _onBack() async {
@@ -150,10 +167,12 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
         ),
       );
       if (discard == true) {
+        await _cleanupImage();
         if (!mounted) return;
         Navigator.pop(context);
       }
     } else {
+      await _cleanupImage();
       Navigator.pop(context);
     }
   }

@@ -305,6 +305,150 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get appearance;
 
+  /// No description provided for @privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get privacy;
+
+  /// No description provided for @privacyDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt photos and spending data stay on this device. No data is uploaded to external servers.'**
+  String get privacyDetail;
+
+  /// No description provided for @deleteAllData.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all data'**
+  String get deleteAllData;
+
+  /// No description provided for @deleteAllDataConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all receipts, rules, and assistant data? This cannot be undone.'**
+  String get deleteAllDataConfirm;
+
+  /// No description provided for @allDataDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'All data deleted'**
+  String get allDataDeleted;
+
+  /// No description provided for @lastSixMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 6 Months'**
+  String get lastSixMonths;
+
+  /// No description provided for @receiptNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt not found'**
+  String get receiptNotFound;
+
+  /// No description provided for @askAboutSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about your spending...'**
+  String get askAboutSpending;
+
+  /// No description provided for @consentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable AI Assistant?'**
+  String get consentTitle;
+
+  /// No description provided for @consentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions and necessary spending numbers (amounts, dates, and up to 10 merchant names per answer) are sent to Google\'s Gemini API. Photos, raw receipt text and item names are never sent. On the free tier, Google may use submitted content to improve its products and human reviewers may read it. Do not submit real personal data. This demo uses test data. This demo is for testing only and is not offered to users in the EEA, Switzerland or the UK.\n\nSee https://ai.google.dev/gemini-api/terms'**
+  String get consentBody;
+
+  /// No description provided for @agreeAndContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree and continue'**
+  String get agreeAndContinue;
+
+  /// No description provided for @notNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get notNow;
+
+  /// No description provided for @aiAssistantSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Assistant'**
+  String get aiAssistantSetting;
+
+  /// No description provided for @aiAssistantHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask questions about your spending in plain language.'**
+  String get aiAssistantHelp;
+
+  /// No description provided for @askAssistantHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a question about your spending...'**
+  String get askAssistantHint;
+
+  /// No description provided for @offlineAssistantFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Here\'s what I can tell without AI:'**
+  String get offlineAssistantFallback;
+
+  /// No description provided for @clearChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear chat'**
+  String get clearChat;
+
+  /// No description provided for @disclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'AI can make mistakes. Not financial advice.'**
+  String get disclaimer;
+
+  /// No description provided for @chipThisMonthTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'This month\'s total'**
+  String get chipThisMonthTotal;
+
+  /// No description provided for @chipTopCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Top category this month'**
+  String get chipTopCategory;
+
+  /// No description provided for @chipQ1.
+  ///
+  /// In en, this message translates to:
+  /// **'How much did I spend this month?'**
+  String get chipQ1;
+
+  /// No description provided for @chipQ2.
+  ///
+  /// In en, this message translates to:
+  /// **'Which category costs me the most?'**
+  String get chipQ2;
+
+  /// No description provided for @chipQ3.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare this month with last month'**
+  String get chipQ3;
+
+  /// No description provided for @chipQ4.
+  ///
+  /// In en, this message translates to:
+  /// **'What was my biggest purchase?'**
+  String get chipQ4;
+
   /// No description provided for @aiDoubleCheck.
   ///
   /// In en, this message translates to:

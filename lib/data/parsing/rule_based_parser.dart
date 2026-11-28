@@ -8,9 +8,20 @@ import 'total_extractor.dart';
 class RuleBasedParser implements ReceiptParser {
   @override
   Future<ParsedReceipt> parse(OcrResult ocr) async {
-    final totalResult = TotalExtractor.extract(ocr);
-    final date = DateExtractor.extract(ocr);
-    final merchant = MerchantExtractor.extract(ocr);
+    // WHY: Cap OCR text length (max 10,000 chars) and line count (max 200 lines) to protect against memory exhaustion.
+    String cappedText = ocr.fullText;
+    if (cappedText.length > 10000) {
+      cappedText = cappedText.substring(0, 10000);
+    }
+    List<OcrLine> cappedLines = ocr.lines;
+    if (cappedLines.length > 200) {
+      cappedLines = cappedLines.take(200).toList();
+    }
+    final safeOcr = OcrResult(fullText: cappedText, lines: cappedLines);
+
+    final totalResult = TotalExtractor.extract(safeOcr);
+    final date = DateExtractor.extract(safeOcr);
+    final merchant = MerchantExtractor.extract(safeOcr);
 
     double confidence = totalResult.confidence;
     final needsReview = <FieldFlag>{};
